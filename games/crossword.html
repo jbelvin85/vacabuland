@@ -58,6 +58,7 @@
 
   let words = Array.isArray(cfg?.words) && cfg.words.length ? cfg.words : ["FUN", "SAMPLE", "WORDS", "HERE"];
   words = Array.from(new Set(words.map(word => String(word || "").replace(/[^A-Za-z]/g, "").toUpperCase()).filter(Boolean)));
+  words = words.filter(word => word.length <= gridSize);
 
   const grid = document.getElementById("crossGrid");
   const regenBtn = document.getElementById("regenBtn");
