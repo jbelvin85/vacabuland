@@ -48,8 +48,8 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const crosswordSettings = savedSettings?.games?.crossword || {};
 
-  let gridSize = Number.isInteger(crosswordSettings.gridSize) ? crosswordSettings.gridSize : (cfg?.options?.size ?? 15);
-  gridSize = clamp(gridSize, 10, 25);
+  const defaultGridSize = cfg?.options?.size ?? 15;
+  const gridSize = clamp(parseInt(crosswordSettings.gridSize, 10) || defaultGridSize, 10, 25);
 
   const cellSize = clamp(Number(crosswordSettings.cellSize) || 36, 28, 48);
   const showNumbers = crosswordSettings.showNumbers !== false;
