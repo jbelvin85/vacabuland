@@ -27,9 +27,10 @@
 
   let cfg = loadConfig();
   // If config is missing or words are missing/empty, show error and block game
-  if (!cfg || !Array.isArray(cfg.words) || cfg.words.length === 0 || cfg.words[0] === "SAMPLE" || cfg.words[0] === "WORDS" || cfg.words[0] === "HERE") {
+  if (!cfg || !Array.isArray(cfg.words) || cfg.words.length === 0) {
     document.body.innerHTML = '<div class="container"><h2>No word list selected!</h2><p>Please return to the home page and select or create a word list before launching the game.</p><div style="margin-top:2em"><a href="../index.html"><button class="icon">Home</button></a></div></div>';
     throw new Error("No word list selected.");
+  }
 
   const savedSettings = (() => {
     try {
@@ -486,7 +487,3 @@
 </script>
 </body>
 </html>
-
-
-
-
