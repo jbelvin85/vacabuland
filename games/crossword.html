@@ -29,10 +29,10 @@
   import { generateCrossword } from "./crossword.js";
 
   let cfg = loadConfig();
-  if (!cfg) {
-    document.body.innerHTML = '<div class="container"><h1>Loading words...</h1></div>';
-    // Prevent further script execution until the page reloads with the config.
-    throw new Error("Bootstrapping config...");
+  // If config is missing or words are missing/empty, show error and block game
+  if (!cfg || !Array.isArray(cfg.words) || cfg.words.length === 0) {
+    document.body.innerHTML = '<div class="container"><h2>No word list selected!</h2><p>Please return to the home page and select or create a word list before launching the game.</p><div style="margin-top:2em"><a href="../index.html"><button class="icon">Home</button></a></div></div>';
+    throw new Error("No word list selected.");
   }
 
   const savedSettings = (() => {
