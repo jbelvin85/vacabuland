@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Word Search</title>
   <link rel="stylesheet" href="../styles.css">
+  <style>
+    .wordsearch-layout {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+    .wordsearch-layout .grid {
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
 <div class="container">
@@ -13,9 +23,10 @@
     <div><button id="toggleSolutionBtn" class="icon">Show solution</button> <button id="printBtn" class="icon">Print</button></div>
   </div>
   <div class="card"><div class="card-body">
-    <div id="grid" class="grid"></div>
-    <div id="banner" class="small" style="display:none">All words found!</div>
-    <ol id="wordlist" class="wordlist"></ol>
+    <div class="wordsearch-layout">
+      <div id="grid" class="grid"></div>
+      <div><div id="banner" class="small" style="display:none">All words found!</div><ol id="wordlist" class="wordlist"></ol></div>
+    </div>
   </div></div>
 </div>
 <script type="module">
@@ -236,6 +247,10 @@
           ]
     );
 
+    const getGridSize = () => {
+      return puzzle ? puzzle.grid.length : 0;
+    };
+
     const clearDragHighlights = () => {
       for (const cell of gridEl.children) {
         cell.classList.remove('drag');
@@ -245,6 +260,9 @@
     const highlightDragPath = () => {
       clearDragHighlights();
       const size = getGridSize();
+      if (!size || !dragPath) {
+        return;
+      }
       dragPath.forEach(([x, y]) => {
         if (x >= 0 && y >= 0 && x < size && y < size) {
           const cell = gridEl.children[y * size + x];
