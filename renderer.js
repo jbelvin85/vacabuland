@@ -6,6 +6,7 @@ const LIST_STORAGE_KEY = 'wordGameLists';
 const SETTINGS_KEY = 'wordGamesSettings';
 const LAST_SELECTION_KEY = 'wordGameLastList';
 const WORD_LIST_ENDPOINT = '/api/wordlists';
+const IS_GITHUB_PAGES = location.hostname.endsWith('github.io');
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -51,32 +52,33 @@ function saveListsLocally(lists) {
 }
 
 async function syncListsFromServer() {
-  try {
-    const response = await fetch(WORD_LIST_ENDPOINT, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error('HTTP ' + response.status);
-    }
-    const data = await response.json();
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      const sanitized = {};
-      Object.keys(data).forEach(name => {
-        const words = data[name];
-        if (Array.isArray(words)) {
-          const cleaned = words.map(word => String(word || '').trim()).filter(Boolean);
-          if (cleaned.length > 0) {
-            sanitized[name] = cleaned;
+  if (!IS_GITHUB_PAGES) {
+    try {
+      const response = await fetch(WORD_LIST_ENDPOINT, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const data = await response.json();
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const sanitized = {};
+        Object.keys(data).forEach(name => {
+          const words = data[name];
+          if (Array.isArray(words)) {
+            const cleaned = words.map(word => String(word || '').trim()).filter(Boolean);
+            if (cleaned.length > 0) {
+              sanitized[name] = cleaned;
+            }
           }
-        }
-      });
-      saveListsLocally(sanitized);
+        });
+        saveListsLocally(sanitized);
+      }
+    } catch (error) {
+      console.warn('Unable to fetch word lists from the server.', error);
     }
-  } catch (error) {
-    console.warn('Unable to fetch word lists from the server.', error);
   }
 }
 
-const listsSyncPromise = syncListsFromServer();
-
+const listsSyncPromise = IS_GITHUB_PAGES ? Promise.resolve() : syncListsFromServer();
 function populateSelector() {
   if (!vocabSelector) {
     return;

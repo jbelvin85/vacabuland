@@ -217,6 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Vocabulary Management (from vocabulary.js) --- //
     const VOCAB_STORAGE_KEY = 'wordGameLists';
+    // Detect if running on GitHub Pages
+    const IS_GITHUB_PAGES = location.hostname.endsWith('github.io');
     const WORD_LIST_ENDPOINT = '/api/wordlists';
 
     function getLists() {
@@ -249,34 +251,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveLists(lists) {
         saveListsLocally(lists);
-        persistListsToServer(lists).catch(error => {
-            console.warn('Unable to update the shared word list file.', error);
-            showStatus('Saved locally, but the shared word list file could not be updated.', true);
-        });
+        if (!IS_GITHUB_PAGES) {
+            persistListsToServer(lists).catch(error => {
+                console.warn('Unable to update the shared word list file.', error);
+                showStatus('Saved locally, but the shared word list file could not be updated.', true);
+            });
+        }
     }
 
     async function syncListsFromServer() {
-        try {
-            const response = await fetch(WORD_LIST_ENDPOINT, { cache: 'no-store' });
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            const data = await response.json();
-            if (data && typeof data === 'object' && !Array.isArray(data)) {
-                const sanitized = {};
-                Object.keys(data).forEach(name => {
-                    const words = data[name];
-                    if (Array.isArray(words)) {
-                        const cleaned = words.map(word => String(word || '').trim()).filter(Boolean);
-                        if (cleaned.length > 0) {
-                            sanitized[name] = cleaned;
+        if (!IS_GITHUB_PAGES) {
+            try {
+                const response = await fetch(WORD_LIST_ENDPOINT, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                const data = await response.json();
+                if (data && typeof data === 'object' && !Array.isArray(data)) {
+                    const sanitized = {};
+                    Object.keys(data).forEach(name => {
+                        const words = data[name];
+                        if (Array.isArray(words)) {
+                            const cleaned = words.map(word => String(word || '').trim()).filter(Boolean);
+                            if (cleaned.length > 0) {
+                                sanitized[name] = cleaned;
+                            }
                         }
-                    }
-                });
-                saveListsLocally(sanitized);
+                    });
+                    saveListsLocally(sanitized);
+                }
+            } catch (error) {
+                console.warn('Unable to sync word lists from the server.', error);
             }
-        } catch (error) {
-            console.warn('Unable to sync word lists from the server.', error);
         }
     }
 
@@ -472,5 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     updateListSelector();
-    syncListsFromServer().then(updateListSelector);
+    if (!IS_GITHUB_PAGES) {
+        syncListsFromServer().then(updateListSelector);
+    }
 });
