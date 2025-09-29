@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VocabuLand</title>
+  <link rel="stylesheet" href="styles.css">
+
+</head>
+<body class="kid-friendly">
+  <main class="main-content">
+    <div class="selection-container">
+      <label for="vocabularySelector">Choose Your Words!</label>
+      <select id="vocabularySelector"></select>
+    </div>
+
+    <div class="game-grid">
+      <a href="#" class="game-button" data-game="games/wordsearch.html">
+        <span class="icon">🔍</span>
+        Word Search
+      </a>
+      <a href="#" class="game-button" data-game="games/crossword.html">
+        <span class="icon">📝</span>
+        Crossword
+      </a>
+      <a href="#" class="game-button" data-game="games/anagram.html">
+        <span class="icon">🔄</span>
+        Anagrams
+      </a>
+      <a href="#" class="game-button" data-game="games/falling.html">
+        <span class="icon">💧</span>
+        Falling Words
+      </a>
+      <a href="#" class="game-button" data-game="games/snake.html">
+        <span class="icon">🐍</span>
+        Word Snake
+      </a>
+    </div>
+  </main>
+
+  <div class="footer-bar">
+    <div class="logo">VocabuLand</div>
+    <a href="settings.html" class="settings-link" title="Settings">⚙️</a>
+  </div>
+
+<script src="renderer.js" type="module" defer></script>
+</body>
+</html>

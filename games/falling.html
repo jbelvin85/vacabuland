@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Falling Words</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="toolbar">
+    <div><a href="../index.html"><button class="icon">Home</button></a></div>
+    <div class="badge">Lives: <span id="lives">3</span></div>
+    <div class="badge">Score: <span id="score">0</span></div>
+    <div class="badge">Speed: <span id="speed">1x</span></div>
+  </div>
+  <div id="playfield"></div>
+  <div class="card" style="margin-top:12px"><div class="card-body">
+    <input id="typebox" type="text" placeholder="Type the falling word..." autocomplete="off" spellcheck="false">
+    <div class="small">Hit Enter to submit. Words speed up as you score. Missed words cost a life.</div>
+  </div></div>
+</div>
+<script type="module">
+  import { loadConfig, normalizeWord } from "./app.js";
+
+  const cfg = loadConfig();
+  if (!cfg) {
+    document.body.innerHTML = '<div class="container"><h1>Loading words...</h1></div>';
+    // Prevent further script execution until the page reloads with the config.
+    throw new Error("Bootstrapping config...");
+  }
+  const savedSettings = (() => {
+    try {
+      const raw = localStorage.getItem("wordGamesSettings");
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      console.warn("Could not parse saved settings for falling words.", error);
+      return null;
+    }
+  })();
+
+  const fallingSettings = savedSettings?.games?.falling || {};
+  const legacyWordLength = Number.isInteger(fallingSettings.wordLength) ? fallingSettings.wordLength : null;
+  const maxWordLengthSetting = Number.isInteger(fallingSettings.maxWordLength) ? fallingSettings.maxWordLength : (legacyWordLength ?? 6);
+  const baseLives = Math.max(1, Math.min(Number(fallingSettings.lives) || 3, 9));
+  const baseSpeedSetting = Math.max(1, Math.min(Number(fallingSettings.speed) || 2, 10));
+  const baseGravity = 0.3 + baseSpeedSetting * 0.15;
+  const baseSpawnInterval = Math.max(58 - baseSpeedSetting * 3, 40);
+  const maxWordLength = Math.max(3, Math.min(maxWordLengthSetting, 12));
+
+  let vocab = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
+  const filtered = vocab.filter(word => word.length <= maxWordLength);
+  if (filtered.length) {
+    vocab = filtered;
+  }
+
+  const field = document.getElementById("playfield");
+  const box = document.getElementById("typebox");
+  const livesEl = document.getElementById("lives");
+  const scoreEl = document.getElementById("score");
+  const speedEl = document.getElementById("speed");
+
+  let lives = baseLives;
+  let score = 0;
+  let tick = 0;
+  let speedMultiplier = 1;
+  let nextId = 1;
+  let running = true;
+  const active = new Map();
+
+  livesEl.textContent = String(lives);
+  speedEl.textContent = formatSpeed(speedMultiplier);
+
+  function formatSpeed(value) {
+    return Number.isInteger(value) ? `${value}x` : `${value.toFixed(1)}x`;
+  }
+
+  function spawn() {
+    const word = vocab[Math.floor(Math.random() * vocab.length)];
+    if (!word) {
+      return;
+    }
+    const element = document.createElement("div");
+    element.className = "falling-word";
+    element.textContent = word;
+    const x = Math.max(8, Math.floor(Math.random() * Math.max(field.clientWidth - 80, 40)));
+    element.style.left = `${x}px`;
+    element.style.top = "-30px";
+    const id = nextId++;
+    element.dataset.id = String(id);
+    field.appendChild(element);
+    const velocity = baseGravity + (speedMultiplier - 1) * 0.2 + Math.random() * 0.12;
+    active.set(id, { word, el: element, y: -30, speed: velocity });
+  }
+
+  function loop() {
+    if (!running) {
+      return;
+    }
+    tick++;
+    const spawnRate = Math.max(baseSpawnInterval - Math.floor((speedMultiplier - 1) * 8) - Math.floor(score / 4), 22);
+    if (tick % spawnRate === 0) {
+      spawn();
+    }
+    for (const [id, obj] of Array.from(active.entries())) {
+      obj.y += obj.speed;
+      obj.el.style.top = `${obj.y}px`;
+      if (obj.y > field.clientHeight - 10) {
+        field.removeChild(obj.el);
+        active.delete(id);
+        lives--;
+        livesEl.textContent = String(lives);
+        if (lives <= 0) {
+          gameOver();
+          return;
+        }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function gameOver() {
+    running = false;
+    const overlay = document.createElement("div");
+    overlay.style.position = "absolute";
+    overlay.style.inset = "0";
+    overlay.style.display = "grid";
+    overlay.style.placeItems = "center";
+    overlay.style.background = "rgba(0,0,0,.08)";
+    overlay.innerHTML = "<div class=\"card\"><div class=\"card-body\"><h2>Game over</h2><p>Score: " + score + "</p><a href=\"falling.html\"><button class=\"primary\">Play again</button></a></div></div>";
+    field.appendChild(overlay);
+  }
+
+  function handleSubmit() {
+    const value = normalizeWord(box.value);
+    if (!value) {
+      return;
+    }
+    let targetId = null;
+    let bestY = -Infinity;
+    for (const [id, obj] of active) {
+      if (obj.word === value && obj.y > bestY) {
+        targetId = id;
+        bestY = obj.y;
+      }
+    }
+    if (targetId !== null) {
+      const match = active.get(targetId);
+      match.el.remove();
+      active.delete(targetId);
+      score++;
+      scoreEl.textContent = String(score);
+      if (score > 0 && score % 6 === 0) {
+        speedMultiplier = Math.min(speedMultiplier + 0.3, 1 + baseSpeedSetting * 0.5);
+        speedEl.textContent = formatSpeed(speedMultiplier);
+      }
+      }
+      box.value = "";
+    } else {
+      box.value = "";
+    }
+  }
+
+  box.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      handleSubmit();
+    }
+  });
+
+  function fit() {
+    field.style.height = "420px";
+  }
+
+  fit();
+  loop();
+</script>
+</body>
+</html>

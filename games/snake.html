@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Snake Spelling</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="toolbar">
+    <div><a href="../index.html"><button class="icon">Home</button></a></div>
+    <div class="badge">Word: <span id="targetWord">---</span></div>
+    <div class="badge">Collected: <span id="progress">0</span></div>
+    <div class="badge">Score: <span id="score">0</span></div>
+  </div>
+  <canvas id="snakeCanvas" width="480" height="480"></canvas>
+  <div class="small">Use arrow keys or WASD. Collect the letters in the correct order. Hitting walls or yourself ends the run.</div>
+</div>
+<script type="module">
+  import { loadConfig, normalizeWord } from "./app.js";
+
+  const cfg = loadConfig() || { words: ["SAMPLE", "WORDS", "HERE"], options: {} };
+  const savedSettings = (() => {
+    try {
+      const raw = localStorage.getItem("wordGamesSettings");
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      console.warn("Could not parse saved settings for snake.", error);
+      return null;
+    }
+  })();
+
+  const snakeSettings = savedSettings?.games?.snake || {};
+  const speedSetting = Math.max(1, Math.min(Number(snakeSettings.speed) || 5, 10));
+  const wallsEnabled = Object.prototype.hasOwnProperty.call(snakeSettings, "walls") ? Boolean(snakeSettings.walls) : true;
+  const baseInterval = Math.max(110, 260 - speedSetting * 18);
+
+  const words = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
+  const canvas = document.getElementById("snakeCanvas");
+  const ctx = canvas.getContext("2d");
+  const size = 16;
+  const cell = canvas.width / size;
+
+  let snake;
+  let dir;
+  let nextDir;
+  let food;
+  let target;
+  let letterIndex;
+  let score = 0;
+  let alive = true;
+  let tickHandle = null;
+
+  const targetEl = document.getElementById("targetWord");
+  const progEl = document.getElementById("progress");
+  const scoreEl = document.getElementById("score");
+
+  function pickTarget() {
+    target = words[Math.floor(Math.random() * words.length)] || "WORD";
+    letterIndex = 0;
+    renderTargetWord();
+    if (progEl) {
+      progEl.textContent = "0";
+    }
+  }
+
+  function placeFood() {
+    while (true) {
+      const x = Math.floor(Math.random() * size);
+      const y = Math.floor(Math.random() * size);
+      if (!snake.some(segment => segment.x === x && segment.y === y)) {
+        food = { x, y, letter: target[letterIndex] };
+        return;
+      }
+    }
+  }
+
+  function renderTargetWord() {
+    if (!targetEl) {
+      return;
+    }
+    if (!target) {
+      targetEl.textContent = "";
+      return;
+    }
+    targetEl.innerHTML = "";
+    const fragment = document.createDocumentFragment();
+    const letters = target.split("");
+    letters.forEach((char, idx) => {
+      const span = document.createElement("span");
+      span.classList.add("word-letter");
+      if (idx < letterIndex) {
+        span.classList.add("word-letter--done");
+      } else if (idx === letterIndex) {
+        span.classList.add("word-letter--current");
+      }
+      span.textContent = char;
+      fragment.appendChild(span);
+    });
+    targetEl.appendChild(fragment);
+  }
+
+  function syncSnakeLengthWithScore() {
+    const desiredLength = Math.max(1, score);
+    if (snake.length > desiredLength) {
+      snake.splice(desiredLength);
+      return;
+    }
+    if (snake.length < desiredLength) {
+      const tail = snake[snake.length - 1] || snake[0] || { x: Math.floor(size / 2), y: Math.floor(size / 2) };
+      while (snake.length < desiredLength) {
+        snake.push({ x: tail.x, y: tail.y });
+      }
+    }
+  }
+
+  function reset() {
+    snake = [{ x: Math.floor(size / 2), y: Math.floor(size / 2) }];
+    dir = { x: 1, y: 0 };
+    nextDir = { x: 1, y: 0 };
+    alive = true;
+    score = 0;
+    scoreEl.textContent = "0";
+    pickTarget();
+    placeFood();
+    draw();
+  }
+
+  function scheduleTick() {
+    if (!alive) {
+      return;
+    }
+    const interval = Math.max(80, baseInterval - score * 4);
+    tickHandle = setTimeout(tick, interval);
+  }
+
+  function tick() {
+    if (!alive) {
+      return;
+    }
+    dir = nextDir;
+    let head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    if (wallsEnabled) {
+      if (head.x < 0 || head.y < 0 || head.x >= size || head.y >= size) {
+        gameOver();
+        return;
+      }
+    } else {
+      if (head.x < 0) head.x = size - 1;
+      else if (head.x >= size) head.x = 0;
+      if (head.y < 0) head.y = size - 1;
+      else if (head.y >= size) head.y = 0;
+    }
+
+    if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+      gameOver();
+      return;
+    }
+
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      letterIndex++;
+      if (progEl) {
+        progEl.textContent = String(letterIndex);
+      }
+      renderTargetWord();
+      if (letterIndex >= target.length) {
+        score++;
+        scoreEl.textContent = String(score);
+        syncSnakeLengthWithScore();
+        pickTarget();
+      }
+      placeFood();
+    } else {
+      snake.pop();
+    }
+
+    draw();
+    scheduleTick();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#e5e7eb";
+    for (let i = 0; i <= size; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, i * cell);
+      ctx.lineTo(canvas.width, i * cell);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(i * cell, 0);
+      ctx.lineTo(i * cell, canvas.height);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#2563eb";
+    snake.forEach(segment => {
+      ctx.fillRect(segment.x * cell + 2, segment.y * cell + 2, cell - 4, cell - 4);
+    });
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold " + cell * 0.6 + "px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(food.letter, food.x * cell + cell / 2, food.y * cell + cell / 2);
+  }
+
+  function gameOver() {
+    alive = false;
+    if (tickHandle) {
+      clearTimeout(tickHandle);
+      tickHandle = null;
+    }
+    ctx.fillStyle = "rgba(0,0,0,.08)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 28px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("Game Over - Score: " + score, canvas.width / 2, canvas.height / 2);
+  }
+
+  window.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+    if ((key === "arrowup" || key === "w") && dir.y !== 1) nextDir = { x: 0, y: -1 };
+    else if ((key === "arrowdown" || key === "s") && dir.y !== -1) nextDir = { x: 0, y: 1 };
+    else if ((key === "arrowleft" || key === "a") && dir.x !== 1) nextDir = { x: -1, y: 0 };
+    else if ((key === "arrowright" || key === "d") && dir.x !== -1) nextDir = { x: 1, y: 0 };
+  });
+
+  reset();
+  scheduleTick();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

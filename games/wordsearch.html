@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Word Search</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="toolbar">
+    <div><a href="../index.html"><button class="icon">Home</button></a> <button id="regenBtn" class="icon">Regenerate</button></div>
+    <div><button id="toggleSolutionBtn" class="icon">Show solution</button> <button id="printBtn" class="icon">Print</button></div>
+  </div>
+  <div class="card"><div class="card-body">
+    <div id="grid" class="grid"></div>
+    <div id="banner" class="small" style="display:none">All words found!</div>
+    <ol id="wordlist" class="wordlist"></ol>
+  </div></div>
+</div>
+<script type="module">
+  import { loadConfig } from "./app.js";
+  import { generateWordSearch } from "./puzzle.js";
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  let cfg = loadConfig();
+  if (!cfg) {
+    document.body.innerHTML = '<div class="container"><h1>Loading words...</h1></div>';
+    // Prevent further script execution until the page reloads with the config.
+    throw new Error("Bootstrapping config...");
+  }
+
+  const savedSettings = (() => {
+    try {
+      const raw = localStorage.getItem("wordGamesSettings");
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      console.warn("Could not parse saved word search settings.", error);
+      return null;
+    }
+  })();
+
+  const defaultOptions = { size: 12, allowDiagonals: true, allowBackwards: true, showWordList: true, cellSize: 36 };
+  const mergedOptions = { ...defaultOptions, ...((cfg && cfg.options) ? cfg.options : {}) };
+  const storedSettings = savedSettings && savedSettings.games && savedSettings.games.wordsearch ? savedSettings.games.wordsearch : {};
+
+  if (Number.isInteger(storedSettings.gridSize)) {
+    mergedOptions.size = storedSettings.gridSize;
+  }
+  if (Number.isInteger(storedSettings.cellSize)) {
+    mergedOptions.cellSize = storedSettings.cellSize;
+  }
+  if (typeof storedSettings.allowDiagonals === "boolean") {
+    mergedOptions.allowDiagonals = storedSettings.allowDiagonals;
+  }
+  if (typeof storedSettings.allowBackwards === "boolean") {
+    mergedOptions.allowBackwards = storedSettings.allowBackwards;
+  }
+  if (typeof storedSettings.showWordList === "boolean") {
+    mergedOptions.showWordList = storedSettings.showWordList;
+  }
+
+  const options = {
+    size: clamp(parseInt(mergedOptions.size, 10) || defaultOptions.size, 8, 24),
+    allowDiagonals: mergedOptions.allowDiagonals !== false,
+    allowBackwards: mergedOptions.allowBackwards !== false,
+    showWordList: mergedOptions.showWordList !== false
+  };
+  const cellSize = clamp(parseInt(mergedOptions.cellSize, 10) || defaultOptions.cellSize, 28, 48);
+
+  cfg.options = { ...cfg.options, ...options, cellSize };
+
+  const words = Array.isArray(cfg.words) && cfg.words.length ? cfg.words : ["SAMPLE", "WORDS", "HERE"];
+
+  let showSolution = false;
+  const gridEl = document.getElementById("grid");
+  const listEl = document.getElementById("wordlist");
+  const bannerEl = document.getElementById("banner");
+  const toggleBtn = document.getElementById("toggleSolutionBtn");
+  const regenBtn = document.getElementById("regenBtn");
+  const printBtn = document.getElementById("printBtn");
+  const defaultToggleLabel = toggleBtn ? toggleBtn.textContent : "Show solution";
+  const hideToggleLabel = "Hide solution";
+
+  let puzzle;
+  const foundWords = new Set();
+  const wordToListItem = new Map();
+  let dragStart = null;
+  let dragPath = [];
+  let activeDirection = null;
+  let activePointerId = null;
+  let interactionsInitialized = false;
+
+  function makeGridStyle(size) {
+    gridEl.style.setProperty("--cell-size", `${cellSize}px`);
+    gridEl.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
+  }
+
+  function renderList() {
+    listEl.innerHTML = "";
+    wordToListItem.clear();
+    if (!options.showWordList) {
+      listEl.style.display = "none";
+      return;
+    }
+    listEl.style.display = "";
+    for (const placement of puzzle.placements) {
+      const li = document.createElement("li");
+      li.textContent = placement.word;
+      li.dataset.word = placement.word;
+      listEl.appendChild(li);
+      wordToListItem.set(placement.word, li);
+    }
+  }
+
+  function applySolution() {
+    const size = puzzle.grid.length;
+    for (const cell of gridEl.children) {
+      cell.classList.remove("solution");
+    }
+    if (!showSolution) {
+      return;
+    }
+    for (const placement of puzzle.placements) {
+      for (const [cx, cy] of placement.coords) {
+        gridEl.children[cy * size + cx].classList.add("solution");
+      }
+    }
+  }
+
+  function markWordAsFound(placement) {
+    if (foundWords.has(placement.word)) {
+      return;
+    }
+    foundWords.add(placement.word);
+    const size = puzzle.grid.length;
+    for (const [x, y] of placement.coords) {
+      const cell = gridEl.children[y * size + x];
+      if (cell) {
+        cell.classList.add("found");
+      }
+    }
+    const item = wordToListItem.get(placement.word);
+    if (item) {
+      item.classList.add("found");
+    }
+    if (foundWords.size === puzzle.placements.length && bannerEl) {
+      bannerEl.style.display = "block";
+      bannerEl.textContent = "All words found!";
+    }
+  }
+
+  function build() {
+    puzzle = generateWordSearch(words, options.size, options);
+    if (
+      activePointerId !== null &&
+      typeof gridEl.hasPointerCapture === 'function' &&
+      gridEl.hasPointerCapture(activePointerId)
+    ) {
+      if (typeof gridEl.releasePointerCapture === 'function') {
+        try {
+          gridEl.releasePointerCapture(activePointerId);
+        } catch (error) {
+          // Ignore release errors.
+        }
+      }
+    }
+    dragStart = null;
+    dragPath = [];
+    activeDirection = null;
+    activePointerId = null;
+    gridEl.innerHTML = "";
+    makeGridStyle(puzzle.grid.length);
+    for (let y = 0; y < puzzle.grid.length; y++) {
+      for (let x = 0; x < puzzle.grid.length; x++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = puzzle.grid[y][x];
+        cell.dataset.x = String(x);
+        cell.dataset.y = String(y);
+        gridEl.appendChild(cell);
+      }
+    }
+    foundWords.clear();
+    if (bannerEl) {
+      bannerEl.style.display = "none";
+      bannerEl.textContent = "All words found!";
+    }
+    renderList();
+    applySolution();
+    setupInteractions();
+  }
+
+  function buildLine(a, b) {
+    const dx = Math.sign(b.x - a.x);
+    const dy = Math.sign(b.y - a.y);
+    const straight = (dx === 0 && dy !== 0) || (dy === 0 && dx !== 0) || (Math.abs(dx) === 1 && Math.abs(dy) === 1);
+    if (!straight) return [];
+    const line = [];
+    let x = a.x;
+    let y = a.y;
+    while (true) {
+      line.push([x, y]);
+      if (x === b.x && y === b.y) break;
+      x += dx;
+      y += dy;
+    }
+    return line;
+  }
+
+  function setupInteractions() {
+    if (interactionsInitialized) {
+      return;
+    }
+    interactionsInitialized = true;
+
+    const getAllowedDirections = () => (
+      options.allowDiagonals
+        ? [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 1 },
+            { x: 1, y: -1 },
+            { x: -1, y: 1 },
+            { x: -1, y: -1 }
+          ]
+        : [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 }
+          ]
+    );
+
+    const clearDragHighlights = () => {
+      for (const cell of gridEl.children) {
+        cell.classList.remove('drag');
+      }
+    };
+
+    const highlightDragPath = () => {
+      clearDragHighlights();
+      const size = getGridSize();
+      dragPath.forEach(([x, y]) => {
+        if (x >= 0 && y >= 0 && x < size && y < size) {
+          const cell = gridEl.children[y * size + x];
+          if (cell) {
+            cell.classList.add('drag');
+          }
+        }
+      });
+    };
+
+    const maxStepsFromStart = dir => {
+      if (!dragStart) {
+        return 0;
+      }
+      const size = getGridSize();
+      const limitX =
+        dir.x === 0
+          ? Number.POSITIVE_INFINITY
+          : dir.x > 0
+          ? size - 1 - dragStart.x
+          : dragStart.x;
+      const limitY =
+        dir.y === 0
+          ? Number.POSITIVE_INFINITY
+          : dir.y > 0
+          ? size - 1 - dragStart.y
+          : dragStart.y;
+      return Math.min(limitX, limitY);
+    };
+
+    const chooseDirection = (dx, dy) => {
+      let bestDir = null;
+      let bestScore = -Infinity;
+      for (const dir of getAllowedDirections()) {
+        const dot = dx * dir.x + dy * dir.y;
+        if (dot <= 0) {
+          continue;
+        }
+        const cross = Math.abs(dx * dir.y - dy * dir.x);
+        const score = dot - cross * 0.5;
+        if (score > bestScore) {
+          bestScore = score;
+          bestDir = dir;
+        }
+      }
+      return bestDir;
+    };
+
+    const computeSteps = (dx, dy, dir) => {
+      const limit = maxStepsFromStart(dir);
+      if (limit <= 0) {
+        return 0;
+      }
+      let steps;
+      if (dir.x !== 0 && dir.y !== 0) {
+        steps = Math.min(Math.abs(dx), Math.abs(dy));
+      } else if (dir.x !== 0) {
+        steps = Math.abs(dx);
+      } else {
+        steps = Math.abs(dy);
+      }
+      return Math.max(1, Math.min(limit, steps));
+    };
+
+    const updatePath = cell => {
+      if (!dragStart) {
+        return;
+      }
+      const size = getGridSize();
+      if (!size) {
+        return;
+      }
+      const dx = cell.x - dragStart.x;
+      const dy = cell.y - dragStart.y;
+
+      if (dx === 0 && dy === 0) {
+        dragPath = [[dragStart.x, dragStart.y]];
+        highlightDragPath();
+        return;
+      }
+
+      let dir = activeDirection;
+      if (!dir) {
+        dir = chooseDirection(dx, dy);
+        if (!dir) {
+          dragPath = [];
+          highlightDragPath();
+          return;
+        }
+        activeDirection = dir;
+      }
+
+      const steps = computeSteps(dx, dy, dir);
+      if (steps <= 0) {
+        dragPath = [[dragStart.x, dragStart.y]];
+        highlightDragPath();
+        return;
+      }
+
+      const end = {
+        x: dragStart.x + dir.x * steps,
+        y: dragStart.y + dir.y * steps
+      };
+
+      dragPath = buildLine(dragStart, end);
+      highlightDragPath();
+    };
+
+    const handleCellEnter = event => {
+      if (activePointerId === null || event.pointerId !== activePointerId) {
+        return;
+      }
+      let target = event.target.closest('.cell');
+      if (!target) {
+        const probe = typeof document.elementFromPoint === 'function'
+          ? document.elementFromPoint(event.clientX, event.clientY)
+          : null;
+        if (probe) {
+          target = probe.closest('.cell');
+        }
+      }
+      if (!target) {
+        return;
+      }
+      updatePath({
+        x: Number(target.dataset.x),
+        y: Number(target.dataset.y)
+      });
+    };
+
+    const finishSelection = () => {
+      if (
+        activePointerId !== null &&
+        typeof gridEl.hasPointerCapture === 'function' &&
+        gridEl.hasPointerCapture(activePointerId)
+      ) {
+        if (typeof gridEl.releasePointerCapture === 'function') {
+          try {
+            gridEl.releasePointerCapture(activePointerId);
+          } catch (error) {
+            // Ignore release errors.
+          }
+        }
+      }
+      }
+      activePointerId = null;
+
+      if (!dragStart || dragPath.length === 0) {
+        dragStart = null;
+        dragPath = [];
+        activeDirection = null;
+        clearDragHighlights();
+        return;
+      }
+
+      const selected = dragPath.slice();
+      dragStart = null;
+      dragPath = [];
+      activeDirection = null;
+      clearDragHighlights();
+
+      if (selected.length <= 1) {
+        return;
+      }
+
+      const sameLine = (a, b) =>
+        a.length === b.length &&
+        a.every((coord, index) => coord[0] === b[index][0] && coord[1] === b[index][1]);
+
+      for (const placement of puzzle.placements) {
+        if (foundWords.has(placement.word)) {
+          continue;
+        }
+        const forwardMatch = sameLine(placement.coords, selected);
+        const reverseMatch = sameLine([...placement.coords].reverse(), selected);
+        if (forwardMatch || reverseMatch) {
+          markWordAsFound(placement);
+          return;
+        }
+      }
+    };
+
+    const handlePointerEnd = event => {
+      if (activePointerId === null || event.pointerId !== activePointerId) {
+        return;
+      }
+      finishSelection();
+    };
+
+    gridEl.addEventListener('pointerdown', event => {
+      const target = event.target.closest('.cell');
+      if (!target) {
+        return;
+      }
+      if (event.pointerType === 'mouse' && event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      activePointerId = event.pointerId;
+      try {
+        gridEl.setPointerCapture(activePointerId);
+      } catch (error) {
+        // Pointer capture may not be supported; ignore errors.
+      }
+      dragStart = { x: Number(target.dataset.x), y: Number(target.dataset.y) };
+      dragPath = [[dragStart.x, dragStart.y]];
+      activeDirection = null;
+      highlightDragPath();
+    });
+
+    gridEl.addEventListener('pointerover', handleCellEnter);
+    gridEl.addEventListener('pointermove', handleCellEnter);
+
+    window.addEventListener('pointerup', handlePointerEnd);
+    window.addEventListener('pointercancel', handlePointerEnd);
+  }
+
+
+  if (printBtn) {
+    printBtn.onclick = () => window.print();
+  }
+  if (regenBtn) {
+    regenBtn.onclick = () => {
+      showSolution = false;
+      if (toggleBtn) {
+        toggleBtn.textContent = defaultToggleLabel;
+      }
+      build();
+    };
+  }
+  if (toggleBtn) {
+    toggleBtn.onclick = () => {
+      showSolution = !showSolution;
+      toggleBtn.textContent = showSolution ? hideToggleLabel : defaultToggleLabel;
+      applySolution();
+    };
+  }
+
+  build();
+</script>
+</body>
+</html>
+
+
+
+

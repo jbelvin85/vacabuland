@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - VocabuLand</title>
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+<body class="kid-friendly settings-page">
+
+    <main class="main-content">
+        <div class="tab-nav">
+            <button class="header-button active" data-tab="general">General</button>
+            <button class="header-button" data-tab="vocabulary">Vocabulary</button>
+            <button class="header-button" data-tab="games">Games</button>
+        </div>
+
+        <div id="general-tab-content" class="tab-panel active">
+            <section>
+                <h2>General Settings</h2>
+                <div class="setting-row">
+                    <label for="darkMode">Dark Mode:</label>
+                    <input type="checkbox" id="darkMode" name="darkMode">
+                </div>
+            </section>
+        </div>
+
+        <div id="vocabulary-tab-content" class="tab-panel">
+            <div class="sub-tab-nav">
+                <button class="sub-header-button active" data-sub-tab="new">New</button>
+                <button class="sub-header-button" data-sub-tab="edit">Edit</button>
+                <button class="sub-header-button" data-sub-tab="import">Import</button>
+            </div>
+
+            <div id="new-sub-tab-content" class="sub-tab-panel active">
+                <section>
+                    <h2>Create New List</h2>
+                    <div class="form-group">
+                        <label for="newListName">List Name:</label>
+                        <input type="text" id="newListName" placeholder="e.g., Animals">
+                    </div>
+                    <div class="form-group">
+                        <label for="newWordInput">Words (comma or newline separated):</label>
+                        <textarea id="newWordInput" rows="10" placeholder="cat, dog, horse...
+
+or
+
+one
+word
+per
+line"></textarea>
+                    </div>
+                    <button class="form-button" id="saveNewButton">Save New List</button>
+                </section>
+            </div>
+
+            <div id="edit-sub-tab-content" class="sub-tab-panel">
+                <section id="list-manager">
+                    <h2>Saved Lists</h2>
+                    <div class="form-group">
+                        <label for="listSelector">Select a list:</label>
+                        <select id="listSelector"></select>
+                    </div>
+                    <button class="form-button" id="loadButton">Load Selected</button>
+                    <button class="form-button danger" id="deleteButton">Delete Selected</button>
+                </section>
+                <section id="list-editor">
+                    <h2>Edit Vocabulary List</h2>
+                    <div class="form-group">
+                        <label for="listName">List Name:</label>
+                        <input type="text" id="listName" placeholder="e.g., Animals">
+                    </div>
+                    <div class="form-group">
+                        <label for="wordInput">Words (comma or newline separated):</label>
+                        <textarea id="wordInput" rows="10" placeholder="cat, dog, horse...
+
+or
+
+one
+word
+per
+line"></textarea>
+                    </div>
+                    <button class="form-button" id="saveButton">Save List</button>
+                </section>
+            </div>
+
+            <div id="import-sub-tab-content" class="sub-tab-panel">
+                <section id="file-operations">
+                    <h3>Import / Export</h3>
+                    <div class="form-group">
+                        <label for="importFile">Import lists from a .json file:</label>
+                        <input type="file" id="importFile" accept=".json">
+
+                    </div>
+                    <button class="form-button" id="exportButton">Export All Lists to File</button>
+                </section>
+            </div>
+    
+            <div id="statusMessage"></div>
+        </div>
+
+        <div id="games-tab-content" class="tab-panel">
+            <div class="sub-tab-nav">
+                <button class="sub-header-button active" data-sub-tab="anagram">Anagram</button>
+                <button class="sub-header-button" data-sub-tab="wordsearch">Word Search</button>
+                <button class="sub-header-button" data-sub-tab="crossword">Crossword</button>
+                <button class="sub-header-button" data-sub-tab="falling">Falling</button>
+                <button class="sub-header-button" data-sub-tab="snake">Snake</button>
+            </div>
+
+            <div id="anagram-sub-tab-content" class="sub-tab-panel active">
+                <section>
+                    <h2 style="text-align: center;">Anagram Settings</h2>
+                    <div class="setting-row">
+                        <label for="anagramMinLength">Word Length (min):</label>
+                        <input type="number" id="anagramMinLength" value="3" min="3" max="15">
+                    </div>
+                    <div class="setting-row">
+                        <label for="anagramMaxLength">Word Length (max):</label>
+                        <input type="number" id="anagramMaxLength" value="8" min="3" max="15">
+                    </div>
+                    <div class="setting-row">
+                        <label for="anagramTimeLimit">Time Limit (seconds, 0 for unlimited):</label>
+                        <input type="number" id="anagramTimeLimit" value="60" min="0" max="600">
+                    </div>
+                    <div class="setting-row">
+                        <label for="anagramHints">Hints Allowed:</label>
+                        <input type="number" id="anagramHints" value="3" min="0" max="10">
+                    </div>
+                </section>
+            </div>
+
+            <div id="wordsearch-sub-tab-content" class="sub-tab-panel">
+                <section>
+                    <h2 style="text-align: center;">Word Search Settings</h2>
+                    <div class="setting-row">
+                        <label for="wordSearchGridSize">Grid Size:</label>
+                        <input type="number" id="wordSearchGridSize" value="12" min="8" max="24">
+                    </div>
+                    <div class="setting-row">
+                        <label for="wordSearchCellSize">Cell Size (px):</label>
+                        <input type="number" id="wordSearchCellSize" value="36" min="28" max="48">
+                    </div>
+                    <div class="setting-row">
+                        <label for="wordSearchDiagonals">Allow Diagonals:</label>
+                        <input type="checkbox" id="wordSearchDiagonals" checked>
+                    </div>
+                    <div class="setting-row">
+                        <label for="wordSearchBackwards">Allow Backwards Words:</label>
+                        <input type="checkbox" id="wordSearchBackwards" checked>
+                    </div>
+                    <div class="setting-row">
+                        <label for="wordSearchShowList">Show Word List:</label>
+                        <input type="checkbox" id="wordSearchShowList" checked>
+                    </div>
+                </section>
+            </div>
+
+            <div id="crossword-sub-tab-content" class="sub-tab-panel">
+                <section>
+                    <h2 style="text-align: center;">Crossword Settings</h2>
+                    <div class="setting-row">
+                        <label for="crosswordGridSize">Grid Size:</label>
+                        <input type="number" id="crosswordGridSize" value="15" min="10" max="25">
+                    </div>
+                    <div class="setting-row">
+                        <label for="crosswordCellSize">Cell Size (px):</label>
+                        <input type="number" id="crosswordCellSize" value="36" min="28" max="48">
+                    </div>
+                    <div class="setting-row">
+                        <label for="crosswordShowNumbers">Show Starting Numbers:</label>
+                        <input type="checkbox" id="crosswordShowNumbers" checked>
+                    </div>
+                    <div class="setting-row">
+                        <label for="crosswordHintAllowance">First-Letter Hints (per puzzle):</label>
+                        <input type="number" id="crosswordHintAllowance" value="0" min="0" max="10">
+                    </div>
+                    <div class="setting-row">
+                        <label for="crosswordHoverHighlight">Highlight Cells on Hover:</label>
+                        <input type="checkbox" id="crosswordHoverHighlight" checked>
+                    </div>
+                </section>
+            </div>
+
+            <div id="falling-sub-tab-content" class="sub-tab-panel">
+                <section>
+                    <h2 style="text-align: center;">Falling Words Settings</h2>
+                    <div class="setting-row">
+                        <label for="fallingSpeed">Falling Speed:</label>
+                        <input type="range" id="fallingSpeed" min="1" max="10" value="3">
+                    </div>
+                    <div class="setting-row">
+                        <label for="fallingWordLength">Max Word Length:</label>
+                        <input type="number" id="fallingWordLength" value="5" min="3" max="10">
+                    </div>
+                    <div class="setting-row">
+                        <label for="fallingLives">Number of Lives:</label>
+                        <input type="number" id="fallingLives" value="3" min="1" max="5">
+                    </div>
+                </section>
+            </div>
+
+            <div id="snake-sub-tab-content" class="sub-tab-panel">
+                <section>
+                    <h2 style="text-align: center;">Word Snake Settings</h2>
+                    <div class="setting-row">
+                        <label for="snakeSpeed">Game Speed:</label>
+                        <input type="range" id="snakeSpeed" min="1" max="10" value="5">
+                    </div>
+                    <div class="setting-row">
+                        <label for="snakeWalls">Enable Walls:</label>
+                        <input type="checkbox" id="snakeWalls">
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="footer-bar">
+        <div class="logo">VocabuLand</div>
+        <a href="index.html" class="settings-link no-rotate" title="Home">&#127968;</a>
+    </div>
+
+    <script src="settings.js" defer></script>
+</body>
+</html>

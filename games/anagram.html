@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anagram Scramble</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="toolbar">
+    <div>
+      <a href="../index.html"><button class="icon">Home</button></a>
+    </div>
+    <div class="badge"><span class="score" id="score">0</span> / <span id="total">0</span> solved</div>
+    <div class="badge" id="timer"></div>
+  </div>
+  <div class="card"><div class="card-body">
+    <h2 id="prompt">Unscramble the letters:</h2>
+    <div id="scrambled" style="font-size:32px;font-weight:800;letter-spacing:4px;margin:12px 0">LOADING...</div>
+    <input id="answer" type="text" placeholder="Type the word..." autocomplete="off" autofocus>
+    <div class="btns" style="margin-top:12px">
+      <button id="checkBtn" class="primary">Check</button>
+      <button id="skipBtn">Skip</button>
+      <button id="shuffleBtn">Shuffle</button>
+      <button id="hintBtn">Hint</button>
+    </div>
+    <div class="small" id="feedback"></div>
+  </div></div>
+</div>
+<script src="anagram.js" type="module" defer></script>
+</body>
+</html>
