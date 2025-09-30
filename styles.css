@@ -196,11 +196,11 @@ body.settings-page .main-content {
 
 .kid-friendly .game-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 32px;
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 900px;
+    margin: 32px auto 0 auto;
 }
 
 .kid-friendly .game-button {
@@ -208,17 +208,19 @@ body.settings-page .main-content {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2vh 1vw;
+    padding: 3vh 2vw;
     background: var(--kf-accent2);
     color: var(--kf-white);
     text-decoration: none;
-    border-radius: 25px;
-    font-size: clamp(1.2rem, 2.5vh, 1.75rem);
+    border-radius: 32px;
+    font-size: clamp(1.3rem, 2.8vh, 2rem);
     font-weight: bold;
-    border-bottom: 8px solid var(--kf-shadow);
+    border-bottom: 10px solid var(--kf-shadow);
     transition: transform 0.1s, box-shadow 0.1s;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    min-height: 180px;
+    min-width: 260px;
+    min-height: 220px;
+    box-shadow: 0 4px 16px rgba(132,204,22,0.10);
 }
 
 .kid-friendly .game-button:hover {
