@@ -42,15 +42,8 @@ export function generateCrossword(words, size) {
 			GRID[ny][nx] = word[i];
 			cells.push([nx, ny]);
 		}
-		// Assign number from the numbers grid (first cell of the word)
-		let number = 0;
-		if (cells.length > 0) {
-			const [nx, ny] = cells[0];
-			if (numbers && numbers[ny] && numbers[ny][nx]) {
-				number = numbers[ny][nx];
-			}
-		}
-		placements.push({ word, x, y, dir, direction: dir, cells, clue: word, number });
+		// Do not assign number here; will assign after numbers grid is built
+		placements.push({ word, x, y, dir, direction: dir, cells, clue: word });
 	}
 
 	// Only use words that fit in the grid
