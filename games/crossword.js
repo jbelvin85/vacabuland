@@ -1,104 +1,85 @@
+
 export function generateCrossword(words, size) {
-	const GRID = Array.from({ length: size }, () => Array.from({ length: size }, () => null));
-	const normalized = Array.from(new Set(
-		words.map(w => w.replace(/[^A-Za-z]/g, '').toUpperCase()).filter(Boolean)
-	)).sort((a, b) => b.length - a.length);
+	// Normalize and filter words
+	const normalized = Array.from(new Set(words.map(w => w.replace(/[^A-Za-z]/g, '').toUpperCase()).filter(Boolean)));
+	const grid = Array.from({ length: size }, () => Array.from({ length: size }, () => null));
 	const placements = [];
-	const inB = (x, y) => x >= 0 && y >= 0 && x < size && y < size;
-	const cell = (x, y) => GRID[y][x];
+	const inBounds = (x, y) => x >= 0 && y >= 0 && x < size && y < size;
 
-	function canPlace(word, x, y, dir) {
-		const dx = dir === 'across' ? 1 : 0, dy = dir === 'down' ? 0 : 1;
-		const len = word.length, endx = x + dx * (len - 1), endy = y + dy * (len - 1);
-		if (!inB(x, y) || !inB(endx, endy)) return false;
-		for (let i = 0; i < len; i++) {
-			const nx = x + dx * i, ny = y + dy * i, c = cell(nx, ny);
-			if (c && c !== word[i]) return false;
-			if (i === 0) {
-				const bx = x - dx, by = y - dy;
-				if (inB(bx, by) && cell(bx, by)) return false;
-			}
-			if (i === len - 1) {
-				const ax = endx + dx, ay = endy + dy;
-				if (inB(ax, ay) && cell(ax, ay)) return false;
-			}
-			if (dir === 'across') {
-				if (inB(x + dx * i, y - 1) && cell(x + dx * i, y - 1) && !c) return false;
-				if (inB(x + dx * i, y + 1) && cell(x + dx * i, y + 1) && !c) return false;
-			} else {
-				if (inB(x - 1, y + dy * i) && cell(x - 1, y + dy * i) && !c) return false;
-				if (inB(x + 1, y + dy * i) && cell(x + 1, y + dy * i) && !c) return false;
-			}
-		}
-		return true;
-	}
-
-	function place(word, x, y, dir) {
-		const dx = dir === 'across' ? 1 : 0, dy = dir === 'down' ? 0 : 1;
-		const cells = [];
-		for (let i = 0; i < word.length; i++) {
-			const nx = x + dx * i, ny = y + dy * i;
-			if (!inB(nx, ny)) continue; // Defensive: skip if out of bounds
-			GRID[ny][nx] = word[i];
-			cells.push([nx, ny]);
-		}
-		// Do not assign number here; will assign after numbers grid is built
-		placements.push({ word, x, y, dir, direction: dir, cells, clue: word });
-	}
-
-	// Only use words that fit in the grid
-	const filtered = normalized.filter(w => w.length <= size);
-	if (filtered.length) {
-		const startX = Math.max(0, Math.floor((size - filtered[0].length) / 2)), startY = Math.floor(size / 2);
-		place(filtered[0], startX, startY, 'across');
-	}
-	for (let wi = 1; wi < filtered.length; wi++) {
-		const w = filtered[wi];
+	// Try to place each word horizontally, then vertically, in the first available spot
+	for (const word of normalized) {
 		let placed = false;
-		outer: for (const p of placements) {
-			for (let i = 0; i < p.word.length; i++) {
-				for (let j = 0; j < w.length; j++) {
-					if (p.word[i] !== w[j]) continue;
-					const ix = p.x + (p.dir === 'across' ? i : 0), iy = p.y + (p.dir === 'down' ? i : 0);
-					const dir = p.dir === 'across' ? 'down' : 'across';
-					const x = ix - (dir === 'across' ? j : 0), y = iy - (dir === 'down' ? j : 0);
-					if (canPlace(w, x, y, dir)) {
-						place(w, x, y, dir); placed = true; break outer;
+		// Try horizontal
+		for (let y = 0; y < size && !placed; y++) {
+			for (let x = 0; x <= size - word.length && !placed; x++) {
+				let canPlace = true;
+				for (let i = 0; i < word.length; i++) {
+					if (grid[y][x + i] && grid[y][x + i] !== word[i]) {
+						canPlace = false;
+						break;
 					}
+				}
+				if (canPlace) {
+					const cells = [];
+					for (let i = 0; i < word.length; i++) {
+						grid[y][x + i] = word[i];
+						cells.push([x + i, y]);
+					}
+					placements.push({ word, x, y, dir: 'across', direction: 'across', cells, clue: word });
+					placed = true;
 				}
 			}
 		}
+		// Try vertical
 		if (!placed) {
-			for (const dir of ['across', 'down']) {
-				for (let y = 0; y < size; y++) {
-					for (let x = 0; x < size; x++) {
-						if (canPlace(w, x, y, dir)) {
-							place(w, x, y, dir); placed = true; break;
+			for (let x = 0; x < size && !placed; x++) {
+				for (let y = 0; y <= size - word.length && !placed; y++) {
+					let canPlace = true;
+					for (let i = 0; i < word.length; i++) {
+						if (grid[y + i][x] && grid[y + i][x] !== word[i]) {
+							canPlace = false;
+							break;
 						}
 					}
-					if (placed) break;
+					if (canPlace) {
+						const cells = [];
+						for (let i = 0; i < word.length; i++) {
+							grid[y + i][x] = word[i];
+							cells.push([x, y + i]);
+						}
+						placements.push({ word, x, y, dir: 'down', direction: 'down', cells, clue: word });
+						placed = true;
+					}
 				}
-				if (placed) break;
 			}
 		}
+		// If not placed, skip the word
 	}
+
+	// Fill unused cells with '#'
 	for (let y = 0; y < size; y++) {
 		for (let x = 0; x < size; x++) {
-			if (GRID[y][x] === null) GRID[y][x] = '#';
+			if (!grid[y][x]) grid[y][x] = '#';
 		}
 	}
+
+	// Numbering
 	const numbers = Array.from({ length: size }, () => Array.from({ length: size }, () => 0));
 	let next = 1;
-	const isStart = (x, y) =>
-		GRID[y][x] !== '#' &&
-		(((x === 0 || GRID[y][x - 1] === '#') && x + 1 < size && GRID[y][x + 1] !== '#')
-			|| ((y === 0 || GRID[y - 1][x] === '#') && y + 1 < size && GRID[y + 1][x] !== '#'));
+	const isStart = (x, y) => {
+		if (grid[y][x] === '#') return false;
+		// Start of across
+		if ((x === 0 || grid[y][x - 1] === '#') && x + 1 < size && grid[y][x + 1] !== '#') return true;
+		// Start of down
+		if ((y === 0 || grid[y - 1][x] === '#') && y + 1 < size && grid[y + 1][x] !== '#') return true;
+		return false;
+	};
 	for (let y = 0; y < size; y++) {
 		for (let x = 0; x < size; x++) {
 			if (isStart(x, y)) numbers[y][x] = next++;
 		}
 	}
-	// After numbers are assigned, update placement numbers
+	// Assign numbers to placements
 	for (const p of placements) {
 		if (p.cells && p.cells.length > 0) {
 			const [nx, ny] = p.cells[0];
@@ -107,5 +88,5 @@ export function generateCrossword(words, size) {
 			}
 		}
 	}
-	return { grid: GRID, placements, numbers };
+	return { grid, placements, numbers };
 }
