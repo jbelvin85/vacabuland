@@ -90,264 +90,238 @@
   </div>
 </div>
 <script type="module">
-  import { loadConfig } from "./app.js";
-  import { generateCrossword } from "./crossword.js";
+import { loadConfig } from "./app.js";
+import { generateCrossword } from "./crossword.js";
 
-  let cfg = loadConfig();
-  // If config is missing or words are missing/empty, show error and block game
-  if (!cfg || !Array.isArray(cfg.words) || cfg.words.length === 0) {
-    document.body.innerHTML = '<div class="container"><h2>No word list selected!</h2><p>Please return to the home page and select or create a word list before launching the game.</p><div style="margin-top:2em"><a href="../index.html"><button class="icon">Home</button></a></div></div>';
-    throw new Error("No word list selected.");
+let cfg = loadConfig();
+if (!cfg || !Array.isArray(cfg.words) || cfg.words.length === 0) {
+  document.body.innerHTML = '<div class="container"><h2>No word list selected!</h2><p>Please return to the home page and select or create a word list before launching the game.</p><div style="margin-top:2em"><a href="../index.html"><button class="icon">Home</button></a></div></div>';
+  throw new Error("No word list selected.");
+}
+
+const savedSettings = (() => {
+  try {
+    const raw = localStorage.getItem("wordGamesSettings");
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.warn("Could not parse saved settings for crossword.", error);
+    return null;
   }
+})();
 
-  const savedSettings = (() => {
-    try {
-      const raw = localStorage.getItem("wordGamesSettings");
-      return raw ? JSON.parse(raw) : null;
-    } catch (error) {
-      console.warn("Could not parse saved settings for crossword.", error);
-      return null;
-    }
-  })();
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const crosswordSettings = savedSettings?.games?.crossword || {};
+const defaultGridSize = cfg?.options?.size ?? 15;
+const gridSize = clamp(Number(crosswordSettings.gridSize) || defaultGridSize, 10, 25);
+const cellSize = clamp(Number(crosswordSettings.cellSize) || 36, 28, 48);
+const showNumbers = crosswordSettings.showNumbers !== false;
+const hoverHighlight = crosswordSettings.hoverHighlight !== false;
+const hintAllowance = clamp(Number(crosswordSettings.hintAllowance) || 0, 0, 10);
 
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const crosswordSettings = savedSettings?.games?.crossword || {};
+let words = Array.isArray(cfg?.words) && cfg.words.length ? cfg.words : ["FUN", "SAMPLE", "WORDS", "HERE"];
+words = Array.from(new Set(words.map(item => String(item.word || item || "").replace(/[^A-Za-z]/g, "").toUpperCase()).filter(Boolean)));
+words = words.filter(word => word.length <= gridSize);
 
-  const defaultGridSize = cfg?.options?.size ?? 15;
-  const gridSize = clamp(Number(crosswordSettings.gridSize) || defaultGridSize, 10, 25);
+const grid = document.getElementById("crossGrid");
+const regenBtn = document.getElementById("regenBtn");
+const printBtn = document.getElementById("printBtn");
+const toggleBtn = document.getElementById("toggleSolutionBtn");
+const hintBtn = document.getElementById("hintBtn");
+const drawerToggleBtn = document.getElementById("drawerToggleBtn");
+const settingsDrawer = document.getElementById("settingsDrawer");
+const hintStatus = document.getElementById("hintStatus");
+const cluesAcross = document.getElementById("cluesAcross")?.querySelector("ol");
+const cluesDown = document.getElementById("cluesDown")?.querySelector("ol");
 
-  const cellSize = clamp(Number(crosswordSettings.cellSize) || 36, 28, 48);
-  const showNumbers = crosswordSettings.showNumbers !== false;
-  const hoverHighlight = crosswordSettings.hoverHighlight !== false;
-  const hintAllowance = clamp(Number(crosswordSettings.hintAllowance) || 0, 0, 10);
+const defaultToggleLabel = toggleBtn ? toggleBtn.textContent : "Show Solution";
+const hideToggleLabel = "Hide Solution";
 
-  let words = Array.isArray(cfg?.words) && cfg.words.length ? cfg.words : ["FUN", "SAMPLE", "WORDS", "HERE"];
-  words = Array.from(new Set(words.map(item => String(item.word || item || "").replace(/[^A-Za-z]/g, "").toUpperCase()).filter(Boolean)));
-  words = words.filter(word => word.length <= gridSize);
+let showSolution = false;
+let crosswordData = null;
+let hintsRemaining = hintAllowance;
+const revealedCells = new Set();
 
-  const grid = document.getElementById("crossGrid");
-  const regenBtn = document.getElementById("regenBtn");
-  const printBtn = document.getElementById("printBtn");
-  const toggleBtn = document.getElementById("toggleSolutionBtn");
-  const hintBtn = document.getElementById("hintBtn");
-  const drawerToggleBtn = document.getElementById("drawerToggleBtn");
-  const settingsDrawer = document.getElementById("settingsDrawer");
-  const hintStatus = document.getElementById("hintStatus");
-  const cluesAcross = document.getElementById("cluesAcross")?.querySelector("ol");
-  const cluesDown = document.getElementById("cluesDown")?.querySelector("ol");
+function updateGridClasses() {
+  if (!grid) return;
+  if (hoverHighlight) grid.classList.add("hover-highlight");
+  else grid.classList.remove("hover-highlight");
+}
 
-  const defaultToggleLabel = toggleBtn ? toggleBtn.textContent : "Show Solution";
-  const hideToggleLabel = "Hide Solution";
+function updateHintUI() {
+  if (!hintBtn || !hintStatus) return;
+  if (hintAllowance <= 0) {
+    hintBtn.style.display = "none";
+    hintStatus.style.display = "none";
+    return;
+  }
+  hintBtn.style.display = "";
+  hintStatus.style.display = "";
+  hintStatus.textContent = `Hints left: ${Math.max(hintsRemaining, 0)}`;
+  hintBtn.disabled = hintsRemaining <= 0 || showSolution;
+}
 
-  let showSolution = false;
-  let crosswordData = null;
-  let hintsRemaining = hintAllowance;
-  const revealedCells = new Set();
+function renderClues() {
+  if (!cluesAcross || !cluesDown) return;
+  cluesAcross.innerHTML = "";
+  cluesDown.innerHTML = "";
+  if (!crosswordData || !Array.isArray(crosswordData.placements)) return;
+  for (const p of crosswordData.placements) {
+    const li = document.createElement("li");
+    li.textContent = p.clue;
+    li.value = p.number;
+    const targetList = p.direction === "across" ? cluesAcross : cluesDown;
+    targetList.appendChild(li);
+  }
+}
 
-  function updateGridClasses() {
-    if (!grid) {
-      return;
-    }
-    if (hoverHighlight) {
-      grid.classList.add("hover-highlight");
-    } else {
-      grid.classList.remove("hover-highlight");
+function renderGrid() {
+  if (!grid) return;
+  grid.innerHTML = "";
+  grid.style.setProperty("--cell-size", `${cellSize}px`);
+  if (!crosswordData || !Array.isArray(crosswordData.grid)) {
+    grid.innerHTML = "<div class=\"small\">No words available for this crossword.</div>";
+    return;
+  }
+  const size = crosswordData.grid.length;
+  grid.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
+  const numbers = crosswordData.numbers || [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const index = y * size + x;
+      const value = crosswordData.grid[y][x];
+      const cell = document.createElement("div");
+      cell.className = "cross-cell" + (value === "#" ? " black" : "");
+      cell.style.width = `${cellSize}px`;
+      cell.style.height = `${cellSize}px`;
+      if (value !== "#") {
+        cell.dataset.index = String(index);
+        cell.dataset.letter = value;
+        if (showNumbers && numbers[y] && numbers[y][x]) {
+          const numEl = document.createElement("span");
+          numEl.className = "cell-number";
+          numEl.textContent = numbers[y][x];
+          cell.appendChild(numEl);
+        }
+        const letterEl = document.createElement("div");
+        letterEl.className = "cell-letter";
+        letterEl.textContent = (showSolution || revealedCells.has(index)) ? value : "";
+        cell.appendChild(letterEl);
+      }
+      grid.appendChild(cell);
     }
   }
+}
 
-  function updateHintUI() {
-    if (!hintBtn || !hintStatus) {
-      return;
-    }
-    if (hintAllowance <= 0) {
-      hintBtn.style.display = "none";
-      hintStatus.style.display = "none";
-      return;
-    }
-    hintBtn.style.display = "";
-    hintStatus.style.display = "";
-    hintStatus.textContent = `Hints left: ${Math.max(hintsRemaining, 0)}`;
-    hintBtn.disabled = hintsRemaining <= 0 || showSolution;
+function resetHints() {
+  revealedCells.clear();
+  hintsRemaining = hintAllowance;
+  updateHintUI();
+}
+
+async function fetchClue(word) {
+  try {
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
+    if (!res.ok) throw new Error("Not found");
+    const data = await res.json();
+    const def = data?.[0]?.meanings?.[0]?.definitions?.[0]?.definition;
+    if (def && typeof def === "string") return def;
+  } catch (e) {}
+  return word; // fallback to word itself
+}
+
+async function getCluesForWords(words) {
+  const clueMap = {};
+  await Promise.all(words.map(async w => {
+    clueMap[w] = await fetchClue(w);
+  }));
+  return clueMap;
+}
+
+async function createNewPuzzle() {
+  if (!grid) return;
+  if (!words.length) {
+    crosswordData = null;
+    grid.innerHTML = "<div class=\"small\">No words available for this crossword.</div>";
+    if (hintBtn) hintBtn.disabled = true;
+    if (hintStatus) hintStatus.style.display = "none";
+    return;
   }
-
-  function renderClues() {
-    if (!cluesAcross || !cluesDown) {
-      return;
-    }
-    cluesAcross.innerHTML = "";
-    cluesDown.innerHTML = "";
-    if (!crosswordData || !Array.isArray(crosswordData.placements)) {
-      return;
-    }
-    for (const p of crosswordData.placements) {
-      const li = document.createElement("li");
-      li.textContent = p.clue;
-      li.value = p.number;
-      const targetList = p.direction === "across" ? cluesAcross : cluesDown;
-      targetList.appendChild(li);
-    }
+  grid.innerHTML = '<div class="small">Loading clues and generating puzzle...</div>';
+  const clueMap = await getCluesForWords(words);
+  crosswordData = generateCrossword(words, gridSize);
+  // Attach clues to placements
+  for (const p of crosswordData.placements) {
+    p.clue = clueMap[p.word] || p.word;
   }
+  resetHints();
+  renderClues();
+  renderGrid();
+}
 
-
-  function renderGrid() {
-    if (!grid) {
-      return;
+function revealFirstLetter() {
+  if (!grid || !crosswordData || hintsRemaining <= 0) return;
+  const size = crosswordData.grid.length;
+  const selectCellIndex = () => {
+    for (const placement of crosswordData.placements || []) {
+      if (placement.cells && placement.cells.length) {
+        const [x, y] = placement.cells[0];
+        const index = y * size + x;
+        if (!revealedCells.has(index)) return index;
+      }
     }
-    grid.innerHTML = "";
-    grid.style.setProperty("--cell-size", `${cellSize}px`);
-
-    if (!crosswordData || !Array.isArray(crosswordData.grid)) {
-      grid.innerHTML = "<div class=\"small\">No words available for this crossword.</div>";
-      return;
-    }
-
-    const size = crosswordData.grid.length;
-    grid.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
-    const numbers = crosswordData.numbers || [];
-
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const index = y * size + x;
-        const value = crosswordData.grid[y][x];
-        const cell = document.createElement("div");
-        cell.className = "cross-cell" + (value === "#" ? " black" : "");
-        cell.style.width = `${cellSize}px`;
-        cell.style.height = `${cellSize}px`;
-
-        if (value !== "#") {
-          cell.dataset.index = String(index);
-          cell.dataset.letter = value;
-
-          if (showNumbers && numbers[y] && numbers[y][x]) {
-            const numEl = document.createElement("span");
-            numEl.className = "cell-number";
-            numEl.textContent = numbers[y][x];
-            cell.appendChild(numEl);
-          }
-
-          const letterEl = document.createElement("div");
-          letterEl.className = "cell-letter";
-          letterEl.textContent = (showSolution || revealedCells.has(index)) ? value : "";
-          cell.appendChild(letterEl);
-        }
-
-        grid.appendChild(cell);
+        if (crosswordData.grid[y][x] !== "#" && !revealedCells.has(index)) return index;
       }
     }
-  }
-
-  function resetHints() {
-    revealedCells.clear();
-    hintsRemaining = hintAllowance;
+    return null;
+  };
+  const indexToReveal = selectCellIndex();
+  if (indexToReveal === null) {
+    hintsRemaining = 0;
     updateHintUI();
+    return;
   }
-
-  function createNewPuzzle() {
-    if (!grid) {
-      return;
+  revealedCells.add(indexToReveal);
+  hintsRemaining--;
+  const cell = grid.children[indexToReveal];
+  if (cell) {
+    const letterEl = cell.querySelector(".cell-letter");
+    if (letterEl) {
+      const letter = cell.dataset.letter || letterEl.textContent;
+      letterEl.textContent = letter;
     }
-    if (!words.length) {
-      crosswordData = null;
-      grid.innerHTML = "<div class=\"small\">No words available for this crossword.</div>";
-      if (hintBtn) {
-        hintBtn.disabled = true;
-      }
-      if (hintStatus) {
-        hintStatus.style.display = "none";
-      }
-      return;
-    }
-  crosswordData = generateCrossword(words, gridSize);
-    resetHints();
-    renderClues();
-    renderGrid();
   }
-
-  function revealFirstLetter() {
-    if (!grid || !crosswordData || hintsRemaining <= 0) {
-      return;
-    }
-
-    const size = crosswordData.grid.length;
-    const selectCellIndex = () => {
-      for (const placement of crosswordData.placements || []) {
-        if (placement.cells && placement.cells.length) {
-          const [x, y] = placement.cells[0];
-          const index = y * size + x;
-          if (!revealedCells.has(index)) {
-            return index;
-          }
-        }
-      }
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          const index = y * size + x;
-          if (crosswordData.grid[y][x] !== "#" && !revealedCells.has(index)) {
-            return index;
-          }
-        }
-      }
-      return null;
-    };
-
-    const indexToReveal = selectCellIndex();
-    if (indexToReveal === null) {
-      hintsRemaining = 0;
-      updateHintUI();
-      return;
-    }
-
-    revealedCells.add(indexToReveal);
-    hintsRemaining--;
-    const cell = grid.children[indexToReveal];
-    if (cell) {
-      const letterEl = cell.querySelector(".cell-letter");
-      if (letterEl) {
-        const letter = cell.dataset.letter || letterEl.textContent;
-        letterEl.textContent = letter;
-      }
-    }
-    updateHintUI();
-  }
-
-  updateGridClasses();
   updateHintUI();
-  createNewPuzzle();
+}
 
-  if (drawerToggleBtn && settingsDrawer) {
-    drawerToggleBtn.addEventListener('click', () => {
-      settingsDrawer.classList.toggle('open');
-    });
-  }
+updateGridClasses();
+updateHintUI();
+createNewPuzzle();
 
-  if (regenBtn) {
-    regenBtn.onclick = () => {
-      showSolution = false;
-      if (toggleBtn) {
-        toggleBtn.textContent = defaultToggleLabel;
-      }
-      createNewPuzzle();
-    };
-  }
-
-  if (printBtn) {
-    printBtn.onclick = () => window.print();
-  }
-
-  if (toggleBtn) {
-    toggleBtn.onclick = () => {
-      showSolution = !showSolution;
-      toggleBtn.textContent = showSolution ? hideToggleLabel : defaultToggleLabel;
-      renderGrid();
-      updateHintUI();
-    };
-  }
-
-  if (hintBtn) {
-    hintBtn.addEventListener("click", () => {
-      revealFirstLetter();
-    });
-  }
+if (drawerToggleBtn && settingsDrawer) {
+  drawerToggleBtn.addEventListener('click', () => {
+    settingsDrawer.classList.toggle('open');
+  });
+}
+if (regenBtn) {
+  regenBtn.onclick = () => {
+    showSolution = false;
+    if (toggleBtn) toggleBtn.textContent = defaultToggleLabel;
+    createNewPuzzle();
+  };
+}
+if (printBtn) printBtn.onclick = () => window.print();
+if (toggleBtn) {
+  toggleBtn.onclick = () => {
+    showSolution = !showSolution;
+    toggleBtn.textContent = showSolution ? hideToggleLabel : defaultToggleLabel;
+    renderGrid();
+    updateHintUI();
+  };
+}
+if (hintBtn) hintBtn.addEventListener("click", () => { revealFirstLetter(); });
 </script>
 </body>
 </html>
