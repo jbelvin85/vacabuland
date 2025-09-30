@@ -88,13 +88,25 @@
 
 <div class="container">
   <div class="row">
-    <div class="card"><div class="card-body">
-      <h3>Clues</h3>
-      <div id="cluesAcross"><h4>Across</h4><ol></ol></div>
-      <div id="cluesDown"><h4>Down</h4><ol></ol></div>
+    <div class="card clues-wide"><div class="card-body">
+      <h4 style="margin-bottom:4px;display:inline-block;">Across</h4>
+      <ol id="cluesAcross" style="margin-bottom:10px;"></ol>
+      <h4 style="margin-bottom:4px;display:inline-block;">Down</h4>
+      <ol id="cluesDown"></ol>
     </div></div>
     <div class="card"><div class="card-body"><div id="crossGrid" class="grid"></div></div></div>
   </div>
+    .clues-wide {
+      min-width: 340px;
+      max-width: 520px;
+      width: 100%;
+    }
+    @media (min-width: 900px) {
+      .clues-wide {
+        min-width: 400px;
+        max-width: 620px;
+      }
+    }
 </div>
 <script type="module">
 import { loadConfig } from "./app.js";
@@ -137,8 +149,8 @@ const hintBtn = document.getElementById("hintBtn");
 const drawerToggleBtn = document.getElementById("drawerToggleBtn");
 const settingsDrawer = document.getElementById("settingsDrawer");
 const hintStatus = document.getElementById("hintStatus");
-const cluesAcross = document.getElementById("cluesAcross")?.querySelector("ol");
-const cluesDown = document.getElementById("cluesDown")?.querySelector("ol");
+const cluesAcross = document.getElementById("cluesAcross");
+const cluesDown = document.getElementById("cluesDown");
 
 const defaultToggleLabel = toggleBtn ? toggleBtn.textContent : "Show Solution";
 const hideToggleLabel = "Hide Solution";
@@ -292,6 +304,37 @@ function renderGrid() {
             // Keyboard navigation
             document.addEventListener("keydown", handleGridInputKeydown);
             // Input handler for each cell
+            function checkWordFilledAndValidate() {
+              const guess = inputCells.map(cell => cell.textContent.toUpperCase()).join("");
+              const answer = activePlacement.word;
+              if (guess.length === answer.length && !guess.includes("") && !guess.match(/[^A-Z]/)) {
+                if (guess === answer) {
+                  // Correct: highlight green
+                  inputCells.forEach(cell => {
+                    cell.style.outline = "2.5px solid var(--success)";
+                    cell.style.outlineOffset = "-2px";
+                    cell.contentEditable = "false";
+                  });
+                  setTimeout(() => {
+                    inputCells.forEach(cell => {
+                      cell.classList.remove("highlight");
+                      cell.style.outline = "";
+                    });
+                    clearInputMode();
+                  }, 900);
+                } else {
+                  // Incorrect: clear all
+                  setTimeout(() => {
+                    inputCells.forEach(cell => {
+                      cell.textContent = "";
+                      const letterEl = cell.querySelector(".cell-letter");
+                      if (letterEl) letterEl.textContent = "";
+                    });
+                    inputCells[0].focus();
+                  }, 250);
+                }
+              }
+            }
             inputCells.forEach((cell, idx) => {
               cell.oninput = (ev) => {
                 let val = cell.textContent.toUpperCase().replace(/[^A-Z]/, "");
@@ -303,6 +346,7 @@ function renderGrid() {
                 if (val && idx < inputCells.length - 1) {
                   inputCells[idx + 1].focus();
                 }
+                checkWordFilledAndValidate();
               };
               cell.onfocus = () => {
                 // Place cursor at end
