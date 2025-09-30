@@ -64,12 +64,16 @@
       }
     }
 
-    .cross-cell.black {
-      background: transparent;
-      border: none;
-      color: transparent;
-      box-shadow: none;
-    }
+  .cross-cell.black {
+    background: transparent;
+    border: none;
+    color: transparent;
+    box-shadow: none;
+  }
+  .correct-word {
+    outline: 2.5px solid var(--success) !important;
+    outline-offset: -2px;
+  }
   </style>
 </head>
 <body>
@@ -305,20 +309,23 @@ function renderGrid() {
             document.addEventListener("keydown", handleGridInputKeydown);
             // Input handler for each cell
             function checkWordFilledAndValidate() {
-              const guess = inputCells.map(cell => cell.textContent.toUpperCase()).join("");
+              const guess = inputCells.map(cell => {
+                // Always use .cell-letter content for validation and display
+                const letterEl = cell.querySelector('.cell-letter');
+                return letterEl ? (letterEl.textContent || '').toUpperCase() : '';
+              }).join("");
               const answer = activePlacement.word;
               if (guess.length === answer.length && !guess.includes("") && !guess.match(/[^A-Z]/)) {
                 if (guess === answer) {
                   // Correct: highlight green
                   inputCells.forEach(cell => {
-                    cell.style.outline = "2.5px solid var(--success)";
-                    cell.style.outlineOffset = "-2px";
+                    cell.classList.add("correct-word");
                     cell.contentEditable = "false";
                   });
                   setTimeout(() => {
                     inputCells.forEach(cell => {
                       cell.classList.remove("highlight");
-                      cell.style.outline = "";
+                      cell.classList.remove("correct-word");
                     });
                     clearInputMode();
                   }, 900);
@@ -326,9 +333,9 @@ function renderGrid() {
                   // Incorrect: clear all
                   setTimeout(() => {
                     inputCells.forEach(cell => {
-                      cell.textContent = "";
                       const letterEl = cell.querySelector(".cell-letter");
                       if (letterEl) letterEl.textContent = "";
+                      cell.textContent = "";
                     });
                     inputCells[0].focus();
                   }, 250);
@@ -338,10 +345,10 @@ function renderGrid() {
             inputCells.forEach((cell, idx) => {
               cell.oninput = (ev) => {
                 let val = cell.textContent.toUpperCase().replace(/[^A-Z]/, "");
-                cell.textContent = val;
-                // Update .cell-letter div
+                // Always update .cell-letter only
                 const letterEl = cell.querySelector(".cell-letter");
                 if (letterEl) letterEl.textContent = val;
+                cell.textContent = ""; // Prevent source code or text from appearing in the cell
                 // Move to next cell if input
                 if (val && idx < inputCells.length - 1) {
                   inputCells[idx + 1].focus();
