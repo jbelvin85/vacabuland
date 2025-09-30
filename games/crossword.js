@@ -42,8 +42,15 @@ export function generateCrossword(words, size) {
 			GRID[ny][nx] = word[i];
 			cells.push([nx, ny]);
 		}
-		// For now, use the word itself as the clue. You can enhance this to use definitions if available.
-		placements.push({ word, x, y, dir, cells, clue: word });
+		// Assign number from the numbers grid (first cell of the word)
+		let number = 0;
+		if (cells.length > 0) {
+			const [nx, ny] = cells[0];
+			if (numbers && numbers[ny] && numbers[ny][nx]) {
+				number = numbers[ny][nx];
+			}
+		}
+		placements.push({ word, x, y, dir, direction: dir, cells, clue: word, number });
 	}
 
 	// Only use words that fit in the grid
@@ -91,11 +98,20 @@ export function generateCrossword(words, size) {
 	let next = 1;
 	const isStart = (x, y) =>
 		GRID[y][x] !== '#' &&
-		((x === 0 || GRID[y][x - 1] === '#') && x + 1 < size && GRID[y][x + 1] !== '#'
-			|| (y === 0 || GRID[y - 1][x] === '#') && y + 1 < size && GRID[y + 1][x] !== '#');
+		(((x === 0 || GRID[y][x - 1] === '#') && x + 1 < size && GRID[y][x + 1] !== '#')
+			|| ((y === 0 || GRID[y - 1][x] === '#') && y + 1 < size && GRID[y + 1][x] !== '#'));
 	for (let y = 0; y < size; y++) {
 		for (let x = 0; x < size; x++) {
 			if (isStart(x, y)) numbers[y][x] = next++;
+		}
+	}
+	// After numbers are assigned, update placement numbers
+	for (const p of placements) {
+		if (p.cells && p.cells.length > 0) {
+			const [nx, ny] = p.cells[0];
+			if (numbers[ny] && numbers[ny][nx]) {
+				p.number = numbers[ny][nx];
+			}
 		}
 	}
 	return { grid: GRID, placements, numbers };
