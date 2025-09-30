@@ -42,7 +42,8 @@ export function generateCrossword(words, size) {
 			GRID[ny][nx] = word[i];
 			cells.push([nx, ny]);
 		}
-		placements.push({ word, x, y, dir, cells });
+		// For now, use the word itself as the clue. You can enhance this to use definitions if available.
+		placements.push({ word, x, y, dir, cells, clue: word });
 	}
 
 	// Only use words that fit in the grid
