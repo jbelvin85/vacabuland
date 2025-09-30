@@ -22,14 +22,13 @@
     .drawer {
       position: fixed;
       top: 0;
-      right: -240px; /* Start off-screen */
+      right: -200px; /* Start mostly off-screen, teasing the button */
       width: 240px;
       height: 100%;
       background-color: #f9fafb;
       box-shadow: -2px 0 8px rgba(0,0,0,0.1);
       transition: right 0.3s ease-in-out;
       z-index: 1000;
-      padding: 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
@@ -38,21 +37,38 @@
       right: 0;
     }
     .drawer-toggle {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
+      position: absolute;
+      top: 50%;
+      right: 100%; /* Position it just to the left of the drawer */
+      transform: translateY(-50%);
       z-index: 1001;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      padding: 1rem 0.5rem;
+      border-radius: 8px 0 0 8px;
+      border-right-width: 0;
+    }
+    .drawer-toggle::before {
+      content: '◀';
+      display: inline-block;
+      margin-bottom: 0.5em;
+    }
+    .drawer.open .drawer-toggle::before {
+      content: '▶';
     }
     .drawer-content .icon {
       width: 100%;
       justify-content: flex-start;
     }
+    .drawer-content {
+      padding: 1rem;
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
   <div id="settingsDrawer" class="drawer">
+    <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
     <div class="drawer-content">
       <h3>Game Controls</h3>
       <button id="regenBtn" class="icon">Regenerate</button>
