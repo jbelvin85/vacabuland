@@ -5,6 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Anagram Scramble</title>
   <link rel="stylesheet" href="../styles.css">
+  <style>
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -230px;
+      width: 240px;
+      height: 100%;
+      background-color: #f9fafb;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      transition: right 0.3s ease-in-out;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .drawer.open {
+      right: 0;
+    }
+    .drawer-toggle {
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      transform: translateY(-50%);
+      z-index: 1001;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      padding: 1rem 0.5rem;
+      border-radius: 8px 0 0 8px;
+      font-weight: bold;
+      border-right-width: 0;
+    }
+    .drawer-toggle::before {
+      content: '◀';
+      display: inline-block;
+      margin-bottom: 0.5em;
+    }
+    .drawer.open .drawer-toggle::before {
+      content: '▶';
+    }
+    .drawer-content .icon {
+      width: 100%;
+      justify-content: flex-start;
+    }
+    .drawer-content {
+      padding: 1rem;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    .drawer-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    @media print {
+      .drawer, .toolbar {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body>
 <div id="settingsDrawer" class="drawer">
