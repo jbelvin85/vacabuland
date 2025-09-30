@@ -7,15 +7,21 @@
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
-<div class="container">
-  <div class="toolbar">
-    <div><a href="../index.html"><button class="icon">Home</button></a></div>
-    <div class="badge">Word: <span id="targetWord">---</span></div>
-    <div class="badge">Collected: <span id="progress">0</span></div>
-    <div class="badge">Score: <span id="score">0</span></div>
+<div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
+  <div style="flex: 1 1 auto; min-width: 0;">
+    <div class="toolbar">
+      <div><a href="../index.html"><button class="icon">Home</button></a></div>
+      <div class="badge">Word: <span id="targetWord">---</span></div>
+      <div class="badge">Collected: <span id="progress">0</span></div>
+      <div class="badge">Score: <span id="score">0</span></div>
+    </div>
+    <canvas id="snakeCanvas" width="480" height="480"></canvas>
+    <div class="small">Use arrow keys or WASD. Collect the letters in the correct order. Hitting walls or yourself ends the run.</div>
   </div>
-  <canvas id="snakeCanvas" width="480" height="480"></canvas>
-  <div class="small">Use arrow keys or WASD. Collect the letters in the correct order. Hitting walls or yourself ends the run.</div>
+  <div id="wordListPanel" style="min-width:220px;max-width:300px;">
+    <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Words to Complete</div>
+    <ol id="wordList" style="padding-left:18px;margin:0;display:grid;gap:6px;"></ol>
+  </div>
 </div>
 <script type="module">
   import { loadConfig, normalizeWord } from "./app.js";
@@ -36,9 +42,11 @@
   const wallsEnabled = Object.prototype.hasOwnProperty.call(snakeSettings, "walls") ? Boolean(snakeSettings.walls) : true;
   const baseInterval = Math.max(110, 260 - speedSetting * 18);
 
-  const words = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
+  let words = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
+  let wordQueue = words.slice();
   const canvas = document.getElementById("snakeCanvas");
   const ctx = canvas.getContext("2d");
+  const wordListEl = document.getElementById("wordList");
   const size = 16;
   const cell = canvas.width / size;
 
@@ -57,11 +65,38 @@
   const scoreEl = document.getElementById("score");
 
   function pickTarget() {
-    target = words[Math.floor(Math.random() * words.length)] || "WORD";
+    if (wordQueue.length === 0) {
+      target = null;
+      renderTargetWord();
+      renderWordList();
+      return;
+    }
+    target = wordQueue[0];
     letterIndex = 0;
     renderTargetWord();
+    renderWordList();
     if (progEl) {
       progEl.textContent = "0";
+    }
+  }
+
+  function renderWordList() {
+    if (!wordListEl) return;
+    wordListEl.innerHTML = "";
+    wordQueue.forEach((w, i) => {
+      const li = document.createElement("li");
+      li.textContent = w;
+      if (i === 0) {
+        li.style.fontWeight = "bold";
+        li.style.color = "#1e40af";
+      }
+      wordListEl.appendChild(li);
+    });
+    if (wordQueue.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "All words complete!";
+      li.style.color = "#10b981";
+      wordListEl.appendChild(li);
     }
   }
 
@@ -102,7 +137,7 @@
   }
 
   function syncSnakeLengthWithScore() {
-    const desiredLength = Math.max(1, score);
+    const desiredLength = Math.max(1, score + 1);
     if (snake.length > desiredLength) {
       snake.splice(desiredLength);
       return;
@@ -116,6 +151,8 @@
   }
 
   function reset() {
+    words = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
+    wordQueue = words.slice();
     snake = [{ x: Math.floor(size / 2), y: Math.floor(size / 2) }];
     dir = { x: 1, y: 0 };
     nextDir = { x: 1, y: 0 };
@@ -166,9 +203,13 @@
         progEl.textContent = String(letterIndex);
       }
       renderTargetWord();
-      if (letterIndex >= target.length) {
+      if (target && letterIndex >= target.length) {
         score++;
         scoreEl.textContent = String(score);
+        // Remove completed word from queue
+        if (wordQueue.length > 0) {
+          wordQueue.shift();
+        }
         syncSnakeLengthWithScore();
         pickTarget();
       }
