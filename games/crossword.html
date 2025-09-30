@@ -58,10 +58,17 @@
       border-top: 1px solid var(--border);
     }
     @media print {
+      /* Hide the settings drawer and toolbar when printing */
       .drawer, .toolbar {
-        /* Hide the settings drawer and toolbar when printing */
         display: none;
       }
+    }
+
+    .cross-cell.black {
+      background: transparent;
+      border: none;
+      color: transparent;
+      box-shadow: none;
     }
   </style>
 </head>
