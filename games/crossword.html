@@ -198,6 +198,18 @@ function renderGrid() {
   const size = crosswordData.grid.length;
   grid.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
   const numbers = crosswordData.numbers || [];
+  // For input overlay
+  let inputOverlay = null;
+  let activePlacement = null;
+  let inputCells = [];
+  function closeInputOverlay() {
+    if (inputOverlay) {
+      inputOverlay.remove();
+      inputOverlay = null;
+      activePlacement = null;
+      inputCells = [];
+    }
+  }
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const index = y * size + x;
@@ -209,6 +221,8 @@ function renderGrid() {
       if (value !== "#") {
         cell.dataset.index = String(index);
         cell.dataset.letter = value;
+        cell.dataset.x = x;
+        cell.dataset.y = y;
         if (showNumbers && numbers[y] && numbers[y][x]) {
           const numEl = document.createElement("span");
           numEl.className = "cell-number";
@@ -219,6 +233,105 @@ function renderGrid() {
         letterEl.className = "cell-letter";
         letterEl.textContent = (showSolution || revealedCells.has(index)) ? value : "";
         cell.appendChild(letterEl);
+        // Add click handler for numbered cells
+        if (numbers[y] && numbers[y][x]) {
+          cell.style.cursor = "pointer";
+          cell.addEventListener("click", (e) => {
+            // Find all placements that start at this cell
+            const starts = (crosswordData.placements || []).filter(p => {
+              if (!p.cells || !p.cells.length) return false;
+              const [px, py] = p.cells[0];
+              return px === x && py === y;
+            });
+            if (!starts.length) return;
+            // Prefer across, else down
+            const placement = starts.find(p => p.direction === "across") || starts[0];
+            if (!placement) return;
+            // Remove any existing overlay
+            closeInputOverlay();
+            // Create overlay
+            inputOverlay = document.createElement("div");
+            inputOverlay.style.position = "absolute";
+            inputOverlay.style.zIndex = 2000;
+            inputOverlay.style.pointerEvents = "auto";
+            inputOverlay.style.display = "flex";
+            inputOverlay.style.gap = "0px";
+            inputOverlay.style.left = `${cell.offsetLeft + grid.offsetLeft}px`;
+            inputOverlay.style.top = `${cell.offsetTop + grid.offsetTop}px`;
+            inputOverlay.style.height = `${cellSize}px`;
+            inputOverlay.style.background = "rgba(255,255,200,0.95)";
+            inputOverlay.style.border = "1.5px solid #888";
+            inputOverlay.style.borderRadius = "6px";
+            inputOverlay.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)";
+            inputOverlay.style.padding = "0 2px";
+            inputOverlay.tabIndex = 0;
+            // Build input boxes for each cell in the word
+            inputCells = [];
+            for (let i = 0; i < placement.cells.length; i++) {
+              const [cx, cy] = placement.cells[i];
+              const input = document.createElement("input");
+              input.type = "text";
+              input.maxLength = 1;
+              input.autocomplete = "off";
+              input.style.width = `${cellSize - 6}px`;
+              input.style.height = `${cellSize - 6}px`;
+              input.style.fontSize = `${cellSize * 0.6}px`;
+              input.style.textAlign = "center";
+              input.style.margin = "0 1px";
+              input.style.border = "1px solid #bbb";
+              input.style.borderRadius = "4px";
+              input.style.background = "#fffbe7";
+              input.value = (grid.children[cy * size + cx]?.querySelector(".cell-letter")?.textContent || "");
+              input.dataset.index = cy * size + cx;
+              inputCells.push(input);
+              inputOverlay.appendChild(input);
+            }
+            // Place overlay in grid's parent (card-body)
+            grid.parentElement.appendChild(inputOverlay);
+            inputCells[0].focus();
+            // Handle input navigation and update
+            inputCells.forEach((input, idx) => {
+              input.addEventListener("input", (e) => {
+                const val = input.value.toUpperCase().replace(/[^A-Z]/, "");
+                input.value = val;
+                // Update grid visually
+                const gridCell = grid.children[input.dataset.index];
+                if (gridCell) {
+                  const letterEl = gridCell.querySelector(".cell-letter");
+                  if (letterEl) letterEl.textContent = val;
+                }
+                // Move to next input
+                if (val && idx < inputCells.length - 1) {
+                  inputCells[idx + 1].focus();
+                }
+              });
+              input.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowLeft" && idx > 0) {
+                  inputCells[idx - 1].focus();
+                  e.preventDefault();
+                } else if (e.key === "ArrowRight" && idx < inputCells.length - 1) {
+                  inputCells[idx + 1].focus();
+                  e.preventDefault();
+                } else if (e.key === "Backspace" && !input.value && idx > 0) {
+                  inputCells[idx - 1].focus();
+                  e.preventDefault();
+                } else if (e.key === "Escape") {
+                  closeInputOverlay();
+                }
+              });
+            });
+            // Close overlay on outside click
+            setTimeout(() => {
+              function handleClickOutside(ev) {
+                if (inputOverlay && !inputOverlay.contains(ev.target)) {
+                  closeInputOverlay();
+                  document.removeEventListener("mousedown", handleClickOutside);
+                }
+              }
+              document.addEventListener("mousedown", handleClickOutside);
+            }, 0);
+          });
+        }
       }
       grid.appendChild(cell);
     }
