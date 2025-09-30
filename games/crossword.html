@@ -80,7 +80,14 @@
 </div>
 
 <div class="container">
-  <div class="card"><div class="card-body"><div id="crossGrid" class="grid"></div></div></div>
+  <div class="row">
+    <div class="card"><div class="card-body"><div id="crossGrid" class="grid"></div></div></div>
+    <div class="card"><div class="card-body">
+      <h3>Clues</h3>
+      <div id="cluesAcross"><h4>Across</h4><ol></ol></div>
+      <div id="cluesDown"><h4>Down</h4><ol></ol></div>
+    </div></div>
+  </div>
 </div>
 <script type="module">
   import { loadConfig } from "./app.js";
@@ -126,6 +133,8 @@
   const drawerToggleBtn = document.getElementById("drawerToggleBtn");
   const settingsDrawer = document.getElementById("settingsDrawer");
   const hintStatus = document.getElementById("hintStatus");
+  const cluesAcross = document.getElementById("cluesAcross")?.querySelector("ol");
+  const cluesDown = document.getElementById("cluesDown")?.querySelector("ol");
 
   const defaultToggleLabel = toggleBtn ? toggleBtn.textContent : "Show Solution";
   const hideToggleLabel = "Hide Solution";
@@ -160,6 +169,25 @@
     hintStatus.textContent = `Hints left: ${Math.max(hintsRemaining, 0)}`;
     hintBtn.disabled = hintsRemaining <= 0 || showSolution;
   }
+
+  function renderClues() {
+    if (!cluesAcross || !cluesDown) {
+      return;
+    }
+    cluesAcross.innerHTML = "";
+    cluesDown.innerHTML = "";
+    if (!crosswordData || !Array.isArray(crosswordData.placements)) {
+      return;
+    }
+    for (const p of crosswordData.placements) {
+      const li = document.createElement("li");
+      li.textContent = p.clue;
+      li.value = p.number;
+      const targetList = p.direction === "across" ? cluesAcross : cluesDown;
+      targetList.appendChild(li);
+    }
+  }
+
 
   function renderGrid() {
     if (!grid) {
@@ -231,6 +259,7 @@
     }
     crosswordData = generateCrossword(words, { size: gridSize });
     resetHints();
+    renderClues();
     renderGrid();
   }
 
