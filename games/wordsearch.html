@@ -19,14 +19,50 @@
       font-size: 1.25em;
       font-weight: bold;
     }
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -240px; /* Start off-screen */
+      width: 240px;
+      height: 100%;
+      background-color: #f9fafb;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      transition: right 0.3s ease-in-out;
+      z-index: 1000;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .drawer.open {
+      right: 0;
+    }
+    .drawer-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1001;
+    }
+    .drawer-content .icon {
+      width: 100%;
+      justify-content: flex-start;
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <div class="toolbar">
-    <div><a href="../index.html"><button class="icon">Home</button></a> <button id="regenBtn" class="icon">Regenerate</button></div>
-    <div><button id="toggleSolutionBtn" class="icon">Show solution</button> <button id="printBtn" class="icon">Print</button></div>
+  <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
+  <div id="settingsDrawer" class="drawer">
+    <div class="drawer-content">
+      <h3>Game Controls</h3>
+      <button id="regenBtn" class="icon">Regenerate</button>
+      <button id="toggleSolutionBtn" class="icon">Show solution</button>
+      <button id="printBtn" class="icon">Print</button>
+      <hr style="margin: 1rem 0;">
+      <a href="../index.html"><button class="icon">Home</button></a>
+    </div>
   </div>
+
   <div class="card"><div class="card-body">
     <div class="wordsearch-layout">
       <div id="grid" class="grid"></div>
@@ -97,6 +133,8 @@
   const toggleBtn = document.getElementById("toggleSolutionBtn");
   const regenBtn = document.getElementById("regenBtn");
   const printBtn = document.getElementById("printBtn");
+  const drawerToggleBtn = document.getElementById("drawerToggleBtn");
+  const settingsDrawer = document.getElementById("settingsDrawer");
   const defaultToggleLabel = toggleBtn ? toggleBtn.textContent : "Show solution";
   const hideToggleLabel = "Hide solution";
 
@@ -482,6 +520,12 @@
 
     window.addEventListener('pointerup', handlePointerEnd);
     window.addEventListener('pointercancel', handlePointerEnd);
+  }
+
+  if (drawerToggleBtn && settingsDrawer) {
+    drawerToggleBtn.addEventListener('click', () => {
+      settingsDrawer.classList.toggle('open');
+    });
   }
 
 
