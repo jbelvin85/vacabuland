@@ -23,6 +23,7 @@
       position: fixed;
       top: 0;
       right: -200px; /* Start mostly off-screen, teasing the button */
+      right: -230px; /* Leave about 10px of the drawer visible */
       width: 240px;
       height: 100%;
       background-color: #f9fafb;
@@ -32,6 +33,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      flex-direction: column; /* Children will stack vertically */
     }
     .drawer.open {
       right: 0;
@@ -46,6 +48,7 @@
       text-orientation: mixed;
       padding: 1rem 0.5rem;
       border-radius: 8px 0 0 8px;
+      font-weight: bold; /* Make the menu text bold */
       border-right-width: 0;
     }
     .drawer-toggle::before {
@@ -62,6 +65,21 @@
     }
     .drawer-content {
       padding: 1rem;
+      flex-grow: 1; /* Allow this section to grow and fill available space */
+      overflow-y: auto; /* Add scroll if content overflows */
+    }
+    .drawer-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .drawer-content {
+      padding: 1rem;
+    }
+    @media print {
+      .drawer {
+        /* Hide the settings drawer when printing */
+        display: none;
+      }
     }
   </style>
 </head>
@@ -76,7 +94,14 @@
       <button id="printBtn" class="icon">Print</button>
       <hr style="margin: 1rem 0;">
       <a href="../index.html"><button class="icon">Home</button></a>
+      <div class="drawer-main">
+        <h3>Game Controls</h3>
+        <button id="regenBtn" class="icon">Regenerate</button>
+        <button id="toggleSolutionBtn" class="icon">Show solution</button>
+        <button id="printBtn" class="icon">Print</button>
+      </div>
     </div>
+    <div class="drawer-footer"><a href="../index.html"><button class="icon">⚙️ Home</button></a></div>
   </div>
 
   <div class="card"><div class="card-body">
