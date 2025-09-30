@@ -14,6 +14,11 @@
     .wordsearch-layout .grid {
       flex-shrink: 0;
     }
+    .wordlist {
+      /* The user requested the font size be 1.25x bigger and bold */
+      font-size: 1.25em;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -24,8 +29,8 @@
   </div>
   <div class="card"><div class="card-body">
     <div class="wordsearch-layout">
-      <div><div id="banner" class="small" style="display:none">All words found!</div><ol id="wordlist" class="wordlist"></ol></div>
       <div id="grid" class="grid"></div>
+      <div><div id="banner" class="small" style="display:none">All words found!</div><ol id="wordlist" class="wordlist"></ol></div>
     </div>
   </div></div>
 </div>
