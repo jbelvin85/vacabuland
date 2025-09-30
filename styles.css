@@ -37,6 +37,7 @@ button.icon{display:inline-flex;align-items:center;gap:8px}
 .footer-bar {
     position: sticky;
     bottom: 0;
+    z-index: 10;
 }
 
 /* Tab Navigation */
@@ -118,8 +119,9 @@ body.kid-friendly {
 
 .kid-friendly .footer-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: 24px;
     padding: 10px 25px;
     width: 100%;
     background: var(--kf-white);
@@ -132,6 +134,28 @@ body.kid-friendly {
     font-weight: bold;
     color: var(--kf-accent1);
     text-shadow: 2px 2px var(--kf-white);
+    display: flex;
+    align-items: center;
+}
+
+.kid-friendly .footer-bar .version {
+    font-size: 0.48em !important;
+    margin-left: 10px;
+    color: #888;
+}
+
+.kid-friendly .footer-bar select#vocabularySelector {
+    font-size: 1.1rem;
+    border-radius: 12px;
+    border: 2px solid var(--kf-border);
+    padding: 8px 16px;
+    margin-left: 24px;
+    background: #fff;
+    color: var(--kf-text);
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+    min-width: 180px;
+    max-width: 260px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
 .kid-friendly .settings-link {
@@ -168,22 +192,7 @@ body.settings-page .main-content {
 
 /* Index Page Specific */
 .kid-friendly .selection-container {
-    background: var(--kf-white);
-    padding: 20px 30px;
-    border-radius: 20px;
-    border: 3px solid var(--kf-border);
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto 5vh auto;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
 
-.kid-friendly .selection-container label {
-    font-size: 1.75rem;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: var(--kf-text);
-}
 
 .kid-friendly .game-grid {
     display: grid;

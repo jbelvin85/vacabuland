@@ -80,12 +80,20 @@ async function syncListsFromServer() {
 
 const listsSyncPromise = IS_GITHUB_PAGES ? Promise.resolve() : syncListsFromServer();
 function populateSelector() {
-  if (!vocabSelector) {
-    return;
-  }
+  if (!vocabSelector) return;
   vocabSelector.innerHTML = '';
   const lists = getLists();
   const listNames = Object.keys(lists).sort();
+
+  if (listNames.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'choose your words';
+    option.disabled = true;
+    option.selected = true;
+    vocabSelector.appendChild(option);
+    return;
+  }
 
   const defaultOption = document.createElement('option');
   defaultOption.value = '__default';
