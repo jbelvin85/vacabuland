@@ -3,7 +3,41 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VocabuLand</title>
+
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .game-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+      gap: 32px !important;
+      width: 100% !important;
+      margin: 32px auto 0 auto !important;
+    }
+    .game-button {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #84cc16 !important;
+      color: #fff !important;
+      min-width: 260px !important;
+      min-height: 220px !important;
+      font-size: 2rem !important;
+      border-radius: 32px !important;
+      border-bottom: 10px solid #65a30d !important;
+      box-shadow: 0 4px 16px rgba(132,204,22,0.10) !important;
+      text-decoration: none !important;
+      font-weight: bold !important;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2) !important;
+      transition: transform 0.1s, box-shadow 0.1s !important;
+      padding: 3vh 2vw !important;
+    }
+    .game-button .icon {
+      font-size: 3rem !important;
+      margin-bottom: 10px !important;
+      text-shadow: none !important;
+    }
+  </style>
 
 </head>
 <body class="kid-friendly">
