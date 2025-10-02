@@ -69,9 +69,10 @@
   <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
   <div class="drawer-content">
     <h3>Game Controls</h3>
-    <button id="skipBtnDrawer" class="icon">Skip</button>
-    <button id="shuffleBtnDrawer" class="icon">Shuffle</button>
-    <button id="hintBtnDrawer" class="icon">Hint</button>
+  <button id="pauseBtnDrawer" class="icon">⏸️ Pause</button>
+  <button id="skipBtnDrawer" class="icon">Skip</button>
+  <button id="shuffleBtnDrawer" class="icon">Shuffle</button>
+  <button id="hintBtnDrawer" class="icon">Hint</button>
     <span class="badge" id="hintStatusDrawer">Hints left: 0</span>
   </div>
   <div class="drawer-footer"><a href="../index.html"><button class="icon" style="width: 100%; justify-content: flex-start;">&#127968; Home</button></a></div>
@@ -89,10 +90,11 @@
     <div id="scrambled" style="font-size:32px;font-weight:800;letter-spacing:4px;margin:12px 0">LOADING...</div>
     <input id="answer" type="text" placeholder="Type the word..." autocomplete="off" autofocus>
     <div class="btns" style="margin-top:12px">
-      <button id="checkBtn" class="primary">Check</button>
-      <button id="skipBtn">Skip</button>
-      <button id="shuffleBtn">Shuffle</button>
-      <button id="hintBtn">Hint</button>
+  <button id="pauseBtn" class="icon">⏸️ Pause</button>
+  <button id="checkBtn" class="primary">Check</button>
+  <button id="skipBtn">Skip</button>
+  <button id="shuffleBtn">Shuffle</button>
+  <button id="hintBtn">Hint</button>
     </div>
     <div class="small" id="feedback"></div>
   </div></div>
@@ -102,6 +104,7 @@
 // Drawer logic (modeled after crossword.html)
 const drawerToggleBtn = document.getElementById("drawerToggleBtn");
 const settingsDrawer = document.getElementById("settingsDrawer");
+const pauseBtnDrawer = document.getElementById("pauseBtnDrawer");
 const skipBtnDrawer = document.getElementById("skipBtnDrawer");
 const shuffleBtnDrawer = document.getElementById("shuffleBtnDrawer");
 const hintBtnDrawer = document.getElementById("hintBtnDrawer");
@@ -113,6 +116,7 @@ if (drawerToggleBtn && settingsDrawer) {
   });
 }
 // Forward drawer controls to main controls
+if (pauseBtnDrawer) pauseBtnDrawer.onclick = () => document.getElementById('pauseBtn').click();
 if (skipBtnDrawer) skipBtnDrawer.onclick = () => document.getElementById('skipBtn').click();
 if (shuffleBtnDrawer) shuffleBtnDrawer.onclick = () => document.getElementById('shuffleBtn').click();
 if (hintBtnDrawer) hintBtnDrawer.onclick = () => document.getElementById('hintBtn').click();

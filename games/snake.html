@@ -20,6 +20,7 @@
       <div id="startOverlay" style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.08);z-index:2;">
         <div class="card"><div class="card-body"><h2>Press any button to begin</h2></div></div>
       </div>
+      <button id="pauseBtn" class="icon" style="position:absolute;top:12px;right:12px;z-index:3;">⏸️ Pause</button>
     </div>
     <div class="small">Use arrow keys or WASD. Collect the letters in the correct order. Hitting walls or yourself ends the run.</div>
   </div>
@@ -169,8 +170,9 @@
     draw();
   }
 
+  let paused = false;
   function scheduleTick() {
-    if (!alive) {
+    if (!alive || paused) {
       return;
     }
     const interval = Math.max(80, baseInterval - score * 4);
@@ -178,7 +180,7 @@
   }
 
   function tick() {
-    if (!alive) {
+    if (!alive || paused) {
       return;
     }
     dir = nextDir;
@@ -277,6 +279,7 @@
 
   // Show start overlay and wait for any key/button to begin
   const startOverlay = document.getElementById("startOverlay");
+  const pauseBtn = document.getElementById("pauseBtn");
   function startGame() {
     if (startOverlay) startOverlay.style.display = "none";
     reset();
@@ -284,6 +287,7 @@
     window.removeEventListener("keydown", startGameListener);
     window.removeEventListener("mousedown", startGameListener);
     window.removeEventListener("touchstart", startGameListener);
+    if (pauseBtn) pauseBtn.disabled = false;
   }
   function startGameListener() {
     startGame();
@@ -291,6 +295,16 @@
   window.addEventListener("keydown", startGameListener);
   window.addEventListener("mousedown", startGameListener);
   window.addEventListener("touchstart", startGameListener);
+
+  // Pause button logic
+  if (pauseBtn) {
+    pauseBtn.disabled = true;
+    pauseBtn.addEventListener("click", () => {
+      paused = !paused;
+      pauseBtn.textContent = paused ? "▶️ Resume" : "⏸️ Pause";
+      if (!paused) scheduleTick();
+    });
+  }
 </script>
 </body>
 </html>

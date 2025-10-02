@@ -53,6 +53,7 @@ let index = 0;
 let score = 0;
 let timerInterval;
 let hintsRemaining = settings.hintCount;
+let paused = false;
 
 // --- DOM ELEMENTS --- //
 const scrambledEl = document.getElementById('scrambled');
@@ -97,6 +98,7 @@ function startTimer() {
     timerEl.textContent = timeLeft;
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
+        if (paused) return;
         timeLeft--;
         timerEl.textContent = timeLeft;
         if (timeLeft <= 0) {
@@ -173,6 +175,14 @@ document.getElementById('shuffleBtn').addEventListener('click', () => {
     const word = words[index];
     scrambledEl.textContent = scrambleWord(word);
 });
+
+const pauseBtn = document.getElementById('pauseBtn');
+if (pauseBtn) {
+    pauseBtn.addEventListener('click', () => {
+        paused = !paused;
+        pauseBtn.textContent = paused ? '▶️ Resume' : '⏸️ Pause';
+    });
+}
 
 if (hintBtn) {
     hintBtn.addEventListener('click', showHint);
