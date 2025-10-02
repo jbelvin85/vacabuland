@@ -237,10 +237,10 @@ body.settings-page .main-content {
 
 .kid-friendly .game-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 32px;
     width: 100%;
-    max-width: 900px;
+    max-width: 1200px;
     margin: 32px auto 0 auto;
 }
 
