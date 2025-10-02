@@ -5,8 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Snake Spelling</title>
   <link rel="stylesheet" href="../styles.css">
+  <style>
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -230px;
+      width: 240px;
+      height: 100%;
+      background-color: #f9fafb;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      transition: right 0.3s ease-in-out;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .drawer.open {
+      right: 0;
+    }
+    .drawer-toggle {
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      transform: translateY(-50%);
+      z-index: 1001;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      padding: 1rem 0.5rem;
+      border-radius: 8px 0 0 8px;
+      font-weight: bold;
+      border-right-width: 0;
+    }
+    .drawer-toggle::before {
+      content: '\25c0';
+      display: inline-block;
+      margin-bottom: 0.5em;
+    }
+    .drawer.open .drawer-toggle::before {
+      content: '\25b6';
+    }
+    .drawer-content .icon {
+      width: 100%;
+      justify-content: flex-start;
+    }
+    .drawer-content {
+      padding: 1rem;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    .drawer-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    @media print {
+      .drawer, .toolbar {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body>
+<div id="settingsDrawer" class="drawer">
+  <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
+  <div class="drawer-content">
+    <h3>Game Controls</h3>
+    <button id="pauseBtnDrawer" class="icon">⏸️ Pause</button>
+    <span class="badge">Word: <span id="targetWordDrawer">---</span></span>
+    <span class="badge">Collected: <span id="progressDrawer">0</span></span>
+    <span class="badge">Score: <span id="scoreDrawer">0</span></span>
+  </div>
+  <div class="drawer-footer"><a href="../index.html"><button class="icon" style="width: 100%; justify-content: flex-start;">🏠 Home</button></a></div>
+</div>
 <div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
   <div style="flex: 1 1 auto; min-width: 0;">
     <div class="toolbar">
@@ -30,6 +99,29 @@
   </div>
 </div>
 <script type="module">
+  // Drawer logic
+  const drawerToggleBtn = document.getElementById("drawerToggleBtn");
+  const settingsDrawer = document.getElementById("settingsDrawer");
+  const pauseBtnDrawer = document.getElementById("pauseBtnDrawer");
+  const targetWordDrawer = document.getElementById("targetWordDrawer");
+  const progressDrawer = document.getElementById("progressDrawer");
+  const scoreDrawer = document.getElementById("scoreDrawer");
+
+  if (drawerToggleBtn && settingsDrawer) {
+    drawerToggleBtn.addEventListener('click', () => {
+      settingsDrawer.classList.toggle('open');
+    });
+  }
+
+  // Forward drawer pause to main pause
+  if (pauseBtnDrawer) pauseBtnDrawer.onclick = () => document.getElementById('pauseBtn').click();
+
+  // Sync drawer stats with main stats
+  function syncDrawerStats() {
+    if (targetWordDrawer) targetWordDrawer.textContent = document.getElementById('targetWord').textContent;
+    if (progressDrawer) progressDrawer.textContent = document.getElementById('progress').textContent;
+    if (scoreDrawer) scoreDrawer.textContent = document.getElementById('score').textContent;
+  }
   import { loadConfig, normalizeWord } from "./app.js";
 
   const cfg = loadConfig() || { words: ["SAMPLE", "WORDS", "HERE"], options: {} };
