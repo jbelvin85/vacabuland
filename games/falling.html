@@ -152,13 +152,6 @@
   let baseGravity = 0.3 + baseSpeedSetting * 0.15;
   let baseSpawnInterval = Math.max(58 - baseSpeedSetting * 3, 40);
   let wordDensity = 5;
-  // Drawer logic
-  // Drawer logic (already declared above)
-  if (typeof drawerToggleBtn !== 'undefined' && typeof settingsDrawer !== 'undefined' && drawerToggleBtn && settingsDrawer) {
-    drawerToggleBtn.addEventListener('click', () => {
-      settingsDrawer.classList.toggle('open');
-    });
-  }
 
   // Fall speed slider logic
   const fallSpeedSlider = document.getElementById('fallSpeedSlider');
