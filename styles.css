@@ -160,7 +160,7 @@ body.kid-friendly {
 
 .kid-friendly .footer-bar {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
     gap: 24px;
     padding: 10px 25px;
