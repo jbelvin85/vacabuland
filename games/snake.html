@@ -65,37 +65,51 @@
   </style>
 </head>
 <body>
-<div id="settingsDrawer" class="drawer">
-  <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
-  <div class="drawer-content">
-    <h3>Game Controls</h3>
-    <button id="pauseBtnDrawer" class="icon">⏸️ Pause</button>
-    <span class="badge">Word: <span id="targetWordDrawer">---</span></span>
-    <span class="badge">Collected: <span id="progressDrawer">0</span></span>
-    <span class="badge">Score: <span id="scoreDrawer">0</span></span>
-  </div>
-  <div class="drawer-footer"><a href="../index.html"><button class="icon" style="width: 100%; justify-content: flex-start;">🏠 Home</button></a></div>
-</div>
-<div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
-  <div style="flex: 1 1 auto; min-width: 0;">
-    <div class="toolbar">
-      <div><a href="../index.html"><button class="icon">Home</button></a></div>
-      <div class="badge">Word: <span id="targetWord">---</span></div>
-      <div class="badge">Collected: <span id="progress">0</span></div>
-      <div class="badge">Score: <span id="score">0</span></div>
+  <div id="settingsDrawer" class="drawer">
+    <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
+    <div class="drawer-content">
+      <h3>Game Stats</h3>
+      <span class="badge">Word: <span id="targetWordDrawer">---</span></span>
+      <span class="badge">Collected: <span id="progressDrawer">0</span></span>
+      <span class="badge">Score: <span id="scoreDrawer">0</span></span>
     </div>
-    <div style="position:relative;">
-      <canvas id="snakeCanvas" width="480" height="480"></canvas>
-      <div id="startOverlay" style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.08);z-index:2;">
-        <div class="card"><div class="card-body"><h2>Press any button to begin</h2></div></div>
+    <div class="drawer-footer"><a href="../index.html"><button class="icon" style="width: 100%; justify-content: flex-start;">🏠 Home</button></a></div>
+  </div>
+<div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
+  <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;">
+    <div class="toolbar" style="display: flex; align-items: center; justify-content: flex-start; gap: 18px;">
+      <div class="badge">Score: <span id="score">0</span></div>
+      <div class="badge" id="wordBadge">Word: <span id="targetWord">---</span></div>
+      <div class="badge">Collected: <span id="progress">0</span></div>
+      <button id="pauseBtn" class="icon" style="margin-left:auto;">⏸️ Pause</button>
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: flex-start; gap: 32px;">
+      <div style="position:relative;">
+        <canvas id="snakeCanvas" width="480" height="480"></canvas>
+        <div id="startOverlay" style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.08);z-index:2;">
+          <div class="card"><div class="card-body"><h2>Press any button to begin</h2></div></div>
+        </div>
       </div>
-      <button id="pauseBtn" class="icon" style="position:absolute;top:12px;right:12px;z-index:3;">⏸️ Pause</button>
+      <div id="sidebarPanel" style="min-width:220px;max-width:300px;margin-top:0;align-self:flex-start;">
+        <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Words to Complete</div>
+        <ol id="wordList" style="padding-left:18px;margin:0;display:grid;gap:6px;"></ol>
+        <div style="margin-top:24px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Snake Speed:
+            <input type="range" id="speedSlider" min="3" max="10" value="5" style="flex:1;">
+          </label>
+        </div>
+        <div style="margin-top:18px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">
+            <input type="checkbox" id="edgeToggle" checked style="width:18px;height:18px;">
+            Letters on edge
+          </label>
+        </div>
+      </div>
+<div class="footer-bar" style="position:sticky;bottom:0;width:100%;background:#fff;border-top:2px solid #e5e7eb;display:flex;justify-content:center;align-items:center;padding:10px 0;z-index:100;">
+  <a href="../index.html" style="text-decoration:none;"><button class="icon" style="font-size:1.6em;padding:8px 18px;display:flex;align-items:center;gap:8px;"><span>🏠</span> Home</button></a>
+</div>
     </div>
     <div class="small">Use arrow keys or WASD. Collect the letters in the correct order. Hitting walls or yourself ends the run.</div>
-  </div>
-  <div id="sidebarPanel" style="min-width:220px;max-width:300px;">
-    <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Words to Complete</div>
-    <ol id="wordList" style="padding-left:18px;margin:0;display:grid;gap:6px;"></ol>
   </div>
 </div>
 <script type="module">
@@ -136,9 +150,9 @@
   })();
 
   const snakeSettings = savedSettings?.games?.snake || {};
-  const speedSetting = Math.max(1, Math.min(Number(snakeSettings.speed) || 5, 10));
+  let speedSetting = 5;
   const wallsEnabled = Object.prototype.hasOwnProperty.call(snakeSettings, "walls") ? Boolean(snakeSettings.walls) : true;
-  const baseInterval = Math.max(110, 260 - speedSetting * 18);
+  let baseInterval = Math.max(110, 260 - speedSetting * 18);
 
   let words = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
   let wordQueue = words.slice();
@@ -199,14 +213,34 @@
   }
 
   function placeFood() {
+    const edgeAllowed = document.getElementById('edgeToggle')?.checked ?? true;
     while (true) {
-      const x = Math.floor(Math.random() * size);
-      const y = Math.floor(Math.random() * size);
+      let x = Math.floor(Math.random() * size);
+      let y = Math.floor(Math.random() * size);
+      if (!edgeAllowed) {
+        if (x === 0 || y === 0 || x === size - 1 || y === size - 1) continue;
+      }
       if (!snake.some(segment => segment.x === x && segment.y === y)) {
         food = { x, y, letter: target[letterIndex] };
         return;
       }
     }
+  }
+  // Speed slider logic
+  const speedSlider = document.getElementById('speedSlider');
+  if (speedSlider) {
+    speedSlider.addEventListener('input', (e) => {
+      speedSetting = Number(speedSlider.value);
+      baseInterval = Math.max(110, 260 - speedSetting * 18);
+    });
+  }
+
+  // Edge toggle logic
+  const edgeToggle = document.getElementById('edgeToggle');
+  if (edgeToggle) {
+    edgeToggle.addEventListener('change', () => {
+      placeFood();
+    });
   }
 
   function renderTargetWord() {
@@ -232,6 +266,22 @@
       fragment.appendChild(span);
     });
     targetEl.appendChild(fragment);
+    // Also update wordBadge to show highlighted letter
+    const wordBadge = document.getElementById('wordBadge');
+    if (wordBadge) {
+      wordBadge.innerHTML = 'Word: ';
+      letters.forEach((char, idx) => {
+        const span = document.createElement('span');
+        span.classList.add('word-letter');
+        if (idx < letterIndex) {
+          span.classList.add('word-letter--done');
+        } else if (idx === letterIndex) {
+          span.classList.add('word-letter--current');
+        }
+        span.textContent = char;
+        wordBadge.appendChild(span);
+      });
+    }
   }
 
   function syncSnakeLengthWithScore() {
