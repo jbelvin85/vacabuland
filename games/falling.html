@@ -79,6 +79,8 @@
 <div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
   <div style="flex: 1 1 auto; min-width: 0;">
     <div class="toolbar" style="display: flex; align-items: center; justify-content: flex-start; gap: 18px;">
+      <div class="badge">Lives: <span id="lives">3</span></div>
+      <div class="badge">Score: <span id="score">0</span></div>
       <button id="pauseBtn" class="icon" style="margin-left:auto;">⏸️ Pause</button>
     </div>
     <div style="position:relative;">
@@ -93,18 +95,22 @@
       <div class="small">Hit Enter to submit. Words speed up as you score. Missed words cost a life.</div>
     </div></div>
   </div>
-  <div id="sidebarPanel" style="min-width:220px;max-width:300px;">
-    <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Game Options</div>
-    <div style="margin-bottom:18px;">
-      <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Fall Speed:
-        <input type="range" id="fallSpeedSlider" min="1" max="10" value="2" style="flex:1;">
-      </label>
+  <div id="settingsDrawer" class="drawer">
+    <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
+    <div class="drawer-content">
+      <h3>Game Options</h3>
+      <div style="margin-bottom:18px;">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Fall Speed:
+          <input type="range" id="fallSpeedSlider" min="1" max="10" value="2" style="flex:1;">
+        </label>
+      </div>
+      <div>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Word Density:
+          <input type="range" id="wordDensitySlider" min="1" max="10" value="5" style="flex:1;">
+        </label>
+      </div>
     </div>
-    <div>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Number Frequency:
-        <input type="range" id="numberFreqSlider" min="0" max="10" value="0" style="flex:1;">
-      </label>
-    </div>
+    <div class="drawer-footer"><a href="../index.html"><button class="icon" style="width: 100%; justify-content: flex-start;">🏠 Home</button></a></div>
   </div>
 </div>
 <script type="module">
@@ -156,7 +162,15 @@
   let baseSpeedSetting = 2;
   let baseGravity = 0.3 + baseSpeedSetting * 0.15;
   let baseSpawnInterval = Math.max(58 - baseSpeedSetting * 3, 40);
-  let numberFrequency = 0;
+  let wordDensity = 5;
+  // Drawer logic
+  // Drawer logic (already declared above)
+  if (typeof drawerToggleBtn !== 'undefined' && typeof settingsDrawer !== 'undefined' && drawerToggleBtn && settingsDrawer) {
+    drawerToggleBtn.addEventListener('click', () => {
+      settingsDrawer.classList.toggle('open');
+    });
+  }
+
   // Fall speed slider logic
   const fallSpeedSlider = document.getElementById('fallSpeedSlider');
   if (fallSpeedSlider) {
@@ -167,11 +181,11 @@
     });
   }
 
-  // Number frequency slider logic
-  const numberFreqSlider = document.getElementById('numberFreqSlider');
-  if (numberFreqSlider) {
-    numberFreqSlider.addEventListener('input', () => {
-      numberFrequency = Number(numberFreqSlider.value);
+  // Word density slider logic
+  const wordDensitySlider = document.getElementById('wordDensitySlider');
+  if (wordDensitySlider) {
+    wordDensitySlider.addEventListener('input', () => {
+      wordDensity = Number(wordDensitySlider.value);
     });
   }
   const maxWordLength = Math.max(3, Math.min(maxWordLengthSetting, 12));
