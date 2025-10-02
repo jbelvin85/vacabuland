@@ -89,10 +89,10 @@
       <div class="badge">Score: <span id="score">0</span></div>
       <div class="badge" id="wordBadge">Word: <span id="targetWord">---</span></div>
       <div class="badge">Collected: <span id="progress">0</span></div>
-      <button id="pauseBtn" class="icon" style="margin-left:auto;">⏸️ Pause</button>
     </div>
     <div style="display: flex; flex-direction: row; align-items: flex-start; gap: 32px;">
       <div style="position:relative;">
+        <button id="pauseBtn" class="icon" style="position:absolute;top:-48px;right:0;z-index:3;">⏸️ Pause</button>
         <canvas id="snakeCanvas" width="480" height="480"></canvas>
         <div id="startOverlay" style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.08);z-index:2;">
           <div class="card"><div class="card-body"><h2>Press any button to begin</h2></div></div>
