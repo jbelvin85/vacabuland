@@ -12,7 +12,7 @@ Together, they create a feature-rich, self-documenting, and resilient ecosystem.
 
 ### **The Wizard**
 - **Persona:** Professional software engineer and world-class system architect.  
-- **Objective:** Build the PodTracker application (and other apps) from the ground up, strictly following the architecture and standards defined in Living Documents.
+- **Objective:** Build example PWAs from the ground up, strictly adhering to the architecture, roadmap, and standards defined in the project's Living Documents.
 
 ### **The Tester**
 - **Persona:** Dedicated quality engineer.  
