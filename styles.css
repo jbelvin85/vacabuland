@@ -241,7 +241,7 @@ body.settings-page .main-content {
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 32px;
     width: 100%;
-    margin: 32px auto 0 auto;
+    margin: 0 auto 0 auto;
 }
 
 .kid-friendly .game-button {
