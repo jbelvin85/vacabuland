@@ -7,18 +7,24 @@
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
-<div class="container">
-  <div class="toolbar">
-    <div><a href="../index.html"><button class="icon">Home</button></a></div>
-    <div class="badge">Lives: <span id="lives">3</span></div>
-    <div class="badge">Score: <span id="score">0</span></div>
-    <div class="badge">Speed: <span id="speed">1x</span></div>
+<div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
+  <div style="flex: 1 1 auto; min-width: 0;">
+    <div class="toolbar">
+      <div><a href="../index.html"><button class="icon">Home</button></a></div>
+      <div class="badge">Lives: <span id="lives">3</span></div>
+      <div class="badge">Score: <span id="score">0</span></div>
+      <div class="badge">Speed: <span id="speed">1x</span></div>
+    </div>
+    <div id="playfield"></div>
+    <div class="card" style="margin-top:12px"><div class="card-body">
+      <input id="typebox" type="text" placeholder="Type the falling word..." autocomplete="off" spellcheck="false">
+      <div class="small">Hit Enter to submit. Words speed up as you score. Missed words cost a life.</div>
+    </div></div>
   </div>
-  <div id="playfield"></div>
-  <div class="card" style="margin-top:12px"><div class="card-body">
-    <input id="typebox" type="text" placeholder="Type the falling word..." autocomplete="off" spellcheck="false">
-    <div class="small">Hit Enter to submit. Words speed up as you score. Missed words cost a life.</div>
-  </div></div>
+  <div id="sidebarPanel" style="min-width:220px;max-width:300px;">
+    <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Words to Type</div>
+    <ol id="wordList" style="padding-left:18px;margin:0;display:grid;gap:6px;"></ol>
+  </div>
 </div>
 <script type="module">
   import { loadConfig, normalizeWord } from "./app.js";
@@ -153,7 +159,6 @@
       if (score > 0 && score % 6 === 0) {
         speedMultiplier = Math.min(speedMultiplier + 0.3, 1 + baseSpeedSetting * 0.5);
         speedEl.textContent = formatSpeed(speedMultiplier);
-      }
       }
       box.value = "";
     } else {

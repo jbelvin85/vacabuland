@@ -15,10 +15,15 @@
       <div class="badge">Collected: <span id="progress">0</span></div>
       <div class="badge">Score: <span id="score">0</span></div>
     </div>
-    <canvas id="snakeCanvas" width="480" height="480"></canvas>
+    <div style="position:relative;">
+      <canvas id="snakeCanvas" width="480" height="480"></canvas>
+      <div id="startOverlay" style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.08);z-index:2;">
+        <div class="card"><div class="card-body"><h2>Press any button to begin</h2></div></div>
+      </div>
+    </div>
     <div class="small">Use arrow keys or WASD. Collect the letters in the correct order. Hitting walls or yourself ends the run.</div>
   </div>
-  <div id="wordListPanel" style="min-width:220px;max-width:300px;">
+  <div id="sidebarPanel" style="min-width:220px;max-width:300px;">
     <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Words to Complete</div>
     <ol id="wordList" style="padding-left:18px;margin:0;display:grid;gap:6px;"></ol>
   </div>
@@ -270,8 +275,22 @@
     else if ((key === "arrowright" || key === "d") && dir.x !== -1) nextDir = { x: 1, y: 0 };
   });
 
-  reset();
-  scheduleTick();
+  // Show start overlay and wait for any key/button to begin
+  const startOverlay = document.getElementById("startOverlay");
+  function startGame() {
+    if (startOverlay) startOverlay.style.display = "none";
+    reset();
+    scheduleTick();
+    window.removeEventListener("keydown", startGameListener);
+    window.removeEventListener("mousedown", startGameListener);
+    window.removeEventListener("touchstart", startGameListener);
+  }
+  function startGameListener() {
+    startGame();
+  }
+  window.addEventListener("keydown", startGameListener);
+  window.addEventListener("mousedown", startGameListener);
+  window.addEventListener("touchstart", startGameListener);
 </script>
 </body>
 </html>
