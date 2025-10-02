@@ -78,11 +78,8 @@
 </div>
 <div class="container" style="display: flex; flex-direction: row; gap: 32px; align-items: flex-start;">
   <div style="flex: 1 1 auto; min-width: 0;">
-    <div class="toolbar">
-      <div><a href="../index.html"><button class="icon">Home</button></a></div>
-      <div class="badge">Lives: <span id="lives">3</span></div>
-      <div class="badge">Score: <span id="score">0</span></div>
-      <div class="badge">Speed: <span id="speed">1x</span></div>
+    <div class="toolbar" style="display: flex; align-items: center; justify-content: flex-start; gap: 18px;">
+      <button id="pauseBtn" class="icon" style="margin-left:auto;">⏸️ Pause</button>
     </div>
     <div style="position:relative;">
       <div id="playfield"></div>
@@ -97,8 +94,17 @@
     </div></div>
   </div>
   <div id="sidebarPanel" style="min-width:220px;max-width:300px;">
-    <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Words to Type</div>
-    <ol id="wordList" style="padding-left:18px;margin:0;display:grid;gap:6px;"></ol>
+    <div style="font-weight:bold;font-size:1.2em;margin-bottom:10px;">Game Options</div>
+    <div style="margin-bottom:18px;">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Fall Speed:
+        <input type="range" id="fallSpeedSlider" min="1" max="10" value="2" style="flex:1;">
+      </label>
+    </div>
+    <div>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:bold;">Number Frequency:
+        <input type="range" id="numberFreqSlider" min="0" max="10" value="0" style="flex:1;">
+      </label>
+    </div>
   </div>
 </div>
 <script type="module">
@@ -147,9 +153,27 @@
   const legacyWordLength = Number.isInteger(fallingSettings.wordLength) ? fallingSettings.wordLength : null;
   const maxWordLengthSetting = Number.isInteger(fallingSettings.maxWordLength) ? fallingSettings.maxWordLength : (legacyWordLength ?? 6);
   const baseLives = Math.max(1, Math.min(Number(fallingSettings.lives) || 3, 9));
-  const baseSpeedSetting = Math.max(1, Math.min(Number(fallingSettings.speed) || 2, 10));
-  const baseGravity = 0.3 + baseSpeedSetting * 0.15;
-  const baseSpawnInterval = Math.max(58 - baseSpeedSetting * 3, 40);
+  let baseSpeedSetting = 2;
+  let baseGravity = 0.3 + baseSpeedSetting * 0.15;
+  let baseSpawnInterval = Math.max(58 - baseSpeedSetting * 3, 40);
+  let numberFrequency = 0;
+  // Fall speed slider logic
+  const fallSpeedSlider = document.getElementById('fallSpeedSlider');
+  if (fallSpeedSlider) {
+    fallSpeedSlider.addEventListener('input', () => {
+      baseSpeedSetting = Number(fallSpeedSlider.value);
+      baseGravity = 0.3 + baseSpeedSetting * 0.15;
+      baseSpawnInterval = Math.max(58 - baseSpeedSetting * 3, 40);
+    });
+  }
+
+  // Number frequency slider logic
+  const numberFreqSlider = document.getElementById('numberFreqSlider');
+  if (numberFreqSlider) {
+    numberFreqSlider.addEventListener('input', () => {
+      numberFrequency = Number(numberFreqSlider.value);
+    });
+  }
   const maxWordLength = Math.max(3, Math.min(maxWordLengthSetting, 12));
 
   let vocab = Array.from(new Set(cfg.words.map(normalizeWord))).filter(Boolean);
