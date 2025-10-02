@@ -6,6 +6,19 @@
   <title>Falling Words</title>
   <link rel="stylesheet" href="../styles.css">
   <style>
+    .falling-word {
+      position: absolute;
+      font-size: 1.3rem;
+      font-weight: bold;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 8px;
+      padding: 2px 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      pointer-events: none;
+      user-select: none;
+      transition: background 0.2s;
+    }
     .drawer {
       position: fixed;
       top: 0;
@@ -15,7 +28,7 @@
       background-color: #f9fafb;
       box-shadow: -2px 0 8px rgba(0,0,0,0.1);
       transition: right 0.3s ease-in-out;
-      z-index: 1000;
+      z-index: 2000;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
@@ -303,12 +316,10 @@
     startGame();
   }
   running = false;
-  // Only start game if overlay is visible
-  if (startOverlay && startOverlay.style.display !== "none") {
-    window.addEventListener("keydown", startGameListener);
-    window.addEventListener("mousedown", startGameListener);
-    window.addEventListener("touchstart", startGameListener);
-  }
+  // Always attach listeners for starting the game
+  window.addEventListener("keydown", startGameListener);
+  window.addEventListener("mousedown", startGameListener);
+  window.addEventListener("touchstart", startGameListener);
 
   // Pause button logic
   const pauseBtn = document.getElementById("pauseBtn");
