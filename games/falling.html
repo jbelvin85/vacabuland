@@ -78,7 +78,7 @@
   </style>
 </head>
 <body>
-<!-- Only one drawer, placed outside the main container -->
+<!-- Drawer markup moved to top of body for visibility -->
 <div id="settingsDrawer" class="drawer">
   <button id="drawerToggleBtn" class="icon drawer-toggle">Menu</button>
   <div class="drawer-content">
@@ -309,11 +309,17 @@
     if (startOverlay) startOverlay.style.display = "none";
     running = true;
     loop();
+    // Focus the input box when game starts
+    const box = document.getElementById("typebox");
+    if (box) box.focus();
     window.removeEventListener("keydown", startGameListener);
     window.removeEventListener("mousedown", startGameListener);
     window.removeEventListener("touchstart", startGameListener);
   }
-  function startGameListener() {
+  function startGameListener(e) {
+    // Prevent game start if event is from drawer or its controls
+    const drawer = document.getElementById('settingsDrawer');
+    if (drawer && drawer.contains(e?.target)) return;
     startGame();
   }
   running = false;
